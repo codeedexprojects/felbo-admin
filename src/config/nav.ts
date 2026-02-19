@@ -33,6 +33,7 @@ export const navItems: NavItem[] = [
     title: 'Users',
     href: '/dashboard/users',
     icon: Users,
+    roles: ['SUPER_ADMIN', 'SUB_ADMIN'],
   },
   {
     title: 'Bookings',
@@ -43,6 +44,7 @@ export const navItems: NavItem[] = [
     title: 'Issues',
     href: '/dashboard/issues',
     icon: AlertOctagon,
+    roles: ['SUPER_ADMIN', 'SUB_ADMIN'],
   },
   {
     title: 'Finance',
@@ -54,6 +56,7 @@ export const navItems: NavItem[] = [
     title: 'Cancellations',
     href: '/dashboard/cancellation-management',
     icon: Ban,
+    roles: ['SUPER_ADMIN', 'SUB_ADMIN'],
   },
   {
     title: 'System Config',
