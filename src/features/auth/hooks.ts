@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation } from '@tanstack/react-query';
-import { loginAdmin } from './api';
+import { loginAdmin, logoutAdmin } from './api';
 import { useAuthStore } from '@/stores/authStore';
 import { useRouter } from 'next/navigation';
 import { ApiResponse } from '@/types/api';
@@ -24,6 +24,20 @@ export const useLogin = () => {
         // Manually throw error for onError to catch if success is false but call succeeded
         throw new Error(response.error?.message || 'Login failed');
       }
+    },
+  });
+};
+
+export const useLogout = () => {
+  const router = useRouter();
+  const logout = useAuthStore((state) => state.logout);
+
+  return useMutation<void, Error>({
+    mutationFn: logoutAdmin,
+    onSettled: () => {
+      // Clear local auth state and redirect regardless of API success/failure
+      logout();
+      router.push('/login');
     },
   });
 };

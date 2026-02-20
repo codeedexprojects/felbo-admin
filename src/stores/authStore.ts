@@ -8,6 +8,7 @@ interface AuthState {
   isAuthenticated: boolean;
   login: (token: string, admin: Admin) => void;
   logout: () => void;
+  updateToken: (token: string, admin: Admin) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -19,8 +20,8 @@ export const useAuthStore = create<AuthState>()(
       login: (token, admin) => set({ token, admin, isAuthenticated: true }),
       logout: () => {
         set({ token: null, admin: null, isAuthenticated: false });
-        // Optional: Redirect to login or clear other stores
       },
+      updateToken: (token, admin) => set({ token, admin }),
     }),
     {
       name: 'felbo-auth-storage',

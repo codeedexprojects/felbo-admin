@@ -22,7 +22,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!isAuthenticated) return null;
 
   return (
-    <div className="flex min-h-screen bg-muted/30 font-sans antialiased">
+    <div className="flex h-screen overflow-hidden bg-muted/30 font-sans antialiased">
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Navbar />
