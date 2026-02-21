@@ -47,12 +47,20 @@ export interface IssueDetail {
   updatedAt: string;
 }
 
+export interface IssueStatusCounts {
+  total: number;
+  open: number;
+  resolved: number;
+  rejected: number;
+}
+
 export interface IssueListResponse {
   issues: Issue[];
   total: number;
   page: number;
   limit: number;
   totalPages: number;
+  counts: IssueStatusCounts;
 }
 
 export interface IssueListFilter {
