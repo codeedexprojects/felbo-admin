@@ -19,6 +19,7 @@ import {
 import { useVendors } from '@/features/vendors/hooks';
 import { verificationColumns } from './VerificationColumns'; // Specialized columns
 import { useMounted } from '@/hooks/use-mounted';
+import { useDebounce } from '@/hooks/useDebounce';
 import { VendorListFilter, Vendor } from '@/features/vendors/types';
 
 // Skeleton row component
@@ -36,6 +37,8 @@ function SkeletonRow({ cols }: { cols: number }) {
 
 export function VendorVerificationTable() {
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 });
+  const [searchValue, setSearchValue] = React.useState('');
+  const debouncedSearch = useDebounce(searchValue, 500);
 
   // Hardcode verificationStatus to PENDING
   const [filter, setFilter] = React.useState<VendorListFilter>({
@@ -47,6 +50,11 @@ export function VendorVerificationTable() {
   React.useEffect(() => {
     setFilter((prev) => ({ ...prev, page: pagination.pageIndex + 1, limit: pagination.pageSize }));
   }, [pagination]);
+
+  React.useEffect(() => {
+    setFilter((prev) => ({ ...prev, search: debouncedSearch || undefined, page: 1 }));
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, [debouncedSearch]);
 
   const { data, isLoading, isError } = useVendors(filter);
   const mounted = useMounted();
@@ -60,11 +68,6 @@ export function VendorVerificationTable() {
     onPaginationChange: setPagination,
     state: { pagination },
   });
-
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilter((prev) => ({ ...prev, search: e.target.value, page: 1 }));
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-  };
 
   if (!mounted) return null;
 
@@ -135,7 +138,8 @@ export function VendorVerificationTable() {
           <Input
             placeholder="Search request..."
             className="pl-8 h-8 text-sm border-border/60 bg-muted/30 focus-visible:bg-background"
-            onChange={handleSearch}
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
           />
         </div>
 

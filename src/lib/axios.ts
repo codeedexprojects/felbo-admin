@@ -12,10 +12,9 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // Required: sends the httpOnly refresh token cookie automatically
+  withCredentials: true,
 });
 
-// ─── Request interceptor: attach access token ───────────────────────────────
 apiClient.interceptors.request.use((config) => {
   const token = useAuthStore.getState().token;
   if (token) {
@@ -24,7 +23,6 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// ─── Refresh-token queue (prevents multiple simultaneous refresh calls) ──────
 let isRefreshing = false;
 let failedQueue: Array<{
   resolve: (token: string) => void;
@@ -42,7 +40,6 @@ const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue = [];
 };
 
-// ─── Response interceptor: auto-refresh on 401 ──────────────────────────────
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -51,10 +48,9 @@ apiClient.interceptors.response.use(
     const is401 = error.response?.status === 401;
     const alreadyRetried = originalRequest._retry;
     const isRefreshEndpoint = originalRequest.url === '/admin/refresh-token';
+    const isLoginEndpoint = originalRequest.url === '/admin/login';
 
-    // Only attempt refresh for 401s that haven't been retried and aren't the refresh endpoint itself
-    if (is401 && !alreadyRetried && !isRefreshEndpoint) {
-      // Another refresh is already in flight — queue this request
+    if (is401 && !alreadyRetried && !isRefreshEndpoint && !isLoginEndpoint) {
       if (isRefreshing) {
         return new Promise<string>((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -78,10 +74,8 @@ apiClient.interceptors.response.use(
         if (response.data.success && response.data.data) {
           const { token, admin } = response.data.data;
 
-          // Persist new access token in the store
           useAuthStore.getState().updateToken(token, admin);
 
-          // Resume all queued requests with the new token
           processQueue(null, token);
 
           originalRequest.headers = {
@@ -105,6 +99,11 @@ apiClient.interceptors.response.use(
       } finally {
         isRefreshing = false;
       }
+    }
+
+    const apiMessage = error.response?.data?.error?.message;
+    if (apiMessage) {
+      return Promise.reject(new Error(apiMessage));
     }
 
     return Promise.reject(error);

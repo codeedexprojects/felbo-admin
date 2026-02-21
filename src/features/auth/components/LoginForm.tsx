@@ -27,7 +27,7 @@ export const LoginForm = () => {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full max-w-md mx-auto border-0 shadow-xl shadow-gray-100">
       <CardHeader>
         <CardTitle className="text-2xl font-bold text-center">Admin Login</CardTitle>
         <CardDescription className="text-center">
@@ -50,7 +50,7 @@ export const LoginForm = () => {
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
-              type="email"
+              type="text"
               placeholder="admin@felbo.com"
               {...register('email')}
               disabled={isPending}

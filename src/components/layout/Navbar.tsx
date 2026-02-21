@@ -91,16 +91,19 @@ export function Navbar() {
               <Settings className="h-3.5 w-3.5 text-muted-foreground" />
               Settings
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={logout}
-              className="gap-2 text-sm text-red-500 focus:text-red-500 focus:bg-red-50"
-            >
-              <LogOut className="h-3.5 w-3.5" />
-              Log out
-            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* Logout — always visible outside the dropdown */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={logout}
+          className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors"
+          title="Log out"
+        >
+          <LogOut className="h-4 w-4" />
+        </Button>
       </div>
     </header>
   );
