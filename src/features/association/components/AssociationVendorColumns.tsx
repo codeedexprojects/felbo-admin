@@ -1,10 +1,10 @@
 'use client';
 
 import { ColumnDef } from '@tanstack/react-table';
-import { Vendor } from '@/features/vendors/types';
+import { Vendor } from '@/features/association/types';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, ArrowUpDown, Eye, Store } from 'lucide-react';
+import { MoreHorizontal, Eye } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,7 +16,6 @@ import {
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
-// Modern soft pill badge
 function StatusPill({ status, type }: { status: string; type: 'verification' | 'account' }) {
   const verificationMap: Record<string, string> = {
     APPROVED: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
@@ -45,20 +44,41 @@ function StatusPill({ status, type }: { status: string; type: 'verification' | '
   );
 }
 
-export const columns: ColumnDef<Vendor>[] = [
+function ActionCell({ vendor }: { vendor: Vendor }) {
+  const router = useRouter();
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+        >
+          <span className="sr-only">Open menu</span>
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-44">
+        <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+          Actions
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          className="gap-2 text-sm"
+          onClick={() => router.push(`/dashboard/association/${vendor.id}`)}
+        >
+          <Eye className="h-3.5 w-3.5 text-muted-foreground" />
+          View details
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+export const associationVendorColumns: ColumnDef<Vendor>[] = [
   {
     accessorKey: 'ownerName',
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        size="sm"
-        className="-ml-3 h-8 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground"
-        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-      >
-        Owner Name
-        <ArrowUpDown className="ml-1.5 h-3 w-3" />
-      </Button>
-    ),
+    header: 'Owner Name',
     cell: ({ row }) => (
       <span className="font-medium text-foreground">{row.getValue('ownerName')}</span>
     ),
@@ -71,15 +91,19 @@ export const columns: ColumnDef<Vendor>[] = [
     ),
   },
   {
-    accessorKey: 'registrationType',
-    header: 'Type',
+    accessorKey: 'associationMemberId',
+    header: 'Member ID',
     cell: ({ row }) => {
-      const type = row.getValue('registrationType') as string;
-      return (
-        <span className="text-xs font-medium text-muted-foreground">
-          {type ? type.replace('_', ' ') : '—'}
-        </span>
-      );
+      const memberId = row.getValue('associationMemberId') as string | undefined;
+      return <span className="font-mono text-xs text-muted-foreground">{memberId || '—'}</span>;
+    },
+  },
+  {
+    id: 'shopName',
+    header: 'Shop',
+    cell: ({ row }) => {
+      const shop = row.original.shopDetails;
+      return <span className="text-sm text-foreground">{shop?.name || '—'}</span>;
     },
   },
   {
@@ -105,41 +129,6 @@ export const columns: ColumnDef<Vendor>[] = [
   },
   {
     id: 'actions',
-    cell: ({ row }) => {
-      const vendor = row.original;
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      const router = useRouter();
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-muted-foreground hover:text-foreground"
-            >
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44">
-            <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
-              Actions
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="gap-2 text-sm"
-              onClick={() => router.push(`/dashboard/vendors/${vendor.id}`)}
-            >
-              <Eye className="h-3.5 w-3.5 text-muted-foreground" />
-              View details
-            </DropdownMenuItem>
-            <DropdownMenuItem className="gap-2 text-sm">
-              <Store className="h-3.5 w-3.5 text-muted-foreground" />
-              Manage shop
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    },
+    cell: ({ row }) => <ActionCell vendor={row.original} />,
   },
 ];

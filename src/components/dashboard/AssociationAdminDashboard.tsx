@@ -10,7 +10,7 @@ export function AssociationAdminDashboard() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <StatCard
             index={1}
-            title="My Vendors"
+            title="Vendors"
             value="124"
             icon={Users}
             description="Registered members"

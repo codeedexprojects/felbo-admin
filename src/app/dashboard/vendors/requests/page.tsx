@@ -7,10 +7,20 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, RefreshCcw } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
 
 export default function VerificationRequestsPage() {
   const queryClient = useQueryClient();
   const router = useRouter();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await queryClient.invalidateQueries({ queryKey: ['vendor-requests'] });
+    // Keep the spin for a brief moment so it feels responsive
+    setTimeout(() => setIsRefreshing(false), 800);
+  };
 
   return (
     <RoleGuard allowedRoles={['SUPER_ADMIN', 'SUB_ADMIN']}>
@@ -32,9 +42,12 @@ export default function VerificationRequestsPage() {
               variant="outline"
               size="sm"
               className="h-8 gap-1.5 text-xs bg-card"
-              onClick={() => queryClient.invalidateQueries({ queryKey: ['vendors'] })}
+              onClick={handleRefresh}
+              disabled={isRefreshing}
             >
-              <RefreshCcw className="h-3.5 w-3.5" />
+              <RefreshCcw
+                className={cn('h-3.5 w-3.5 transition-transform', isRefreshing && 'animate-spin')}
+              />
               Refresh
             </Button>
           }
