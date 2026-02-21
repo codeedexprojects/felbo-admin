@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { format } from 'date-fns';
 import { ArrowLeft, MapPin, Image as ImageIcon, User, Store, Scissors } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useIssueById } from '@/features/issues/hooks';
 import {
@@ -13,7 +14,6 @@ import {
   ISSUE_TYPE_LABELS,
   REFUND_STATUS_LABELS,
 } from '@/features/issues/types';
-import { useMounted } from '@/hooks/use-mounted';
 
 // ── Badge helpers ────────────────────────────────────────────────────────────
 
@@ -107,14 +107,41 @@ function Card({
   );
 }
 
-// ── Skeleton ─────────────────────────────────────────────────────────────────
-
-function Skeleton() {
+function IssueDetailSkeleton() {
   return (
-    <div className="space-y-4">
-      {Array.from({ length: 3 }).map((_, i) => (
-        <div key={i} className="h-32 w-full animate-pulse rounded-xl bg-muted" />
-      ))}
+    <div className="space-y-6">
+      <Skeleton className="h-8 w-32" />
+      <div className="flex items-start justify-between">
+        <div className="space-y-2">
+          <Skeleton className="h-6 w-40" />
+          <Skeleton className="h-4 w-64" />
+        </div>
+        <div className="flex gap-2">
+          <Skeleton className="h-5 w-16 rounded-full" />
+          <Skeleton className="h-5 w-20 rounded-full" />
+        </div>
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="rounded-xl border border-border/60 overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-border/40 bg-muted/30">
+              <Skeleton className="h-4 w-4" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+            <div className="px-4 py-2 space-y-0">
+              {Array.from({ length: 4 }).map((_, j) => (
+                <div
+                  key={j}
+                  className="flex justify-between py-3 border-b border-border/30 last:border-0"
+                >
+                  <Skeleton className="h-3 w-24" />
+                  <Skeleton className="h-3 w-32" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -124,18 +151,8 @@ function Skeleton() {
 export default function IssueDetailPage({ params }: { params: { issueId: string } }) {
   const { issueId } = params;
   const { data: issue, isLoading, isError } = useIssueById(issueId);
-  const mounted = useMounted();
 
-  if (!mounted) return null;
-
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="h-8 w-48 animate-pulse rounded bg-muted" />
-        <Skeleton />
-      </div>
-    );
-  }
+  if (isLoading) return <IssueDetailSkeleton />;
 
   if (isError || !issue) {
     return (

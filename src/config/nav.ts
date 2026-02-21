@@ -8,6 +8,7 @@ import {
   Ban,
   Settings,
   ShieldCheck,
+  Building2,
 } from 'lucide-react';
 import { AdminRole } from '@/types/api';
 
@@ -28,6 +29,13 @@ export const navItems: NavItem[] = [
     title: 'Vendors',
     href: '/dashboard/vendors',
     icon: Store,
+    roles: ['SUPER_ADMIN', 'SUB_ADMIN'],
+  },
+  {
+    title: 'My Vendors',
+    href: '/dashboard/association',
+    icon: Building2,
+    roles: ['ASSOCIATION_ADMIN'],
   },
   {
     title: 'Users',

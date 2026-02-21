@@ -1,6 +1,31 @@
 import axios from '@/lib/axios';
-import { VendorListFilter, VendorListResponse } from './types';
+import {
+  VendorListFilter,
+  VendorListResponse,
+  VendorAdminDetail,
+  VerificationRequestsFilter,
+  VerificationRequestsResponse,
+} from './types';
 import { ApiResponse } from '@/types/api';
+
+export const getVerificationRequests = async (
+  filters: VerificationRequestsFilter = { page: 1, limit: 10 }
+): Promise<VerificationRequestsResponse> => {
+  const params = new URLSearchParams();
+  if (filters.page) params.append('page', filters.page.toString());
+  if (filters.limit) params.append('limit', filters.limit.toString());
+  if (filters.search) params.append('search', filters.search);
+
+  const response = await axios.get<ApiResponse<VerificationRequestsResponse>>(
+    `/admin/vendors/requests?${params.toString()}`
+  );
+
+  if (!response.data.success) {
+    throw new Error(response.data.error?.message || 'Failed to fetch verification requests');
+  }
+
+  return response.data.data;
+};
 
 export const getVendors = async (
   filters: VendorListFilter = { page: 1, limit: 10 }
@@ -21,6 +46,14 @@ export const getVendors = async (
     throw new Error(response.data.error?.message || 'Failed to fetch vendors');
   }
 
+  return response.data.data;
+};
+
+export const getVendorDetail = async (id: string): Promise<VendorAdminDetail> => {
+  const response = await axios.get<ApiResponse<VendorAdminDetail>>(`/admin/vendors/${id}`);
+  if (!response.data.success) {
+    throw new Error(response.data.error?.message || 'Failed to fetch vendor detail');
+  }
   return response.data.data;
 };
 

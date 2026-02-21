@@ -22,7 +22,7 @@ import {
 import { useIssues } from '@/features/issues/hooks';
 import { issueColumns } from './IssueColumns';
 import { useMounted } from '@/hooks/use-mounted';
-import { Issue, IssueListFilter, IssueStatus, IssueType } from '../types';
+import { IssueListFilter, IssueStatus, IssueType } from '../types';
 
 function SkeletonRow({ cols }: { cols: number }) {
   return (
@@ -59,37 +59,34 @@ export function IssueTable() {
 
   if (!mounted) return null;
 
-  const issues: Issue[] = data?.issues || [];
-  const total = data?.total || 0;
-  const openCount = issues.filter((i) => i.status === 'OPEN').length;
-  const resolvedCount = issues.filter((i) => i.status === 'RESOLVED').length;
-  const rejectedCount = issues.filter((i) => i.status === 'REJECTED').length;
+  // Stats — sourced from server-side counts (accurate across all pages)
+  const counts = data?.counts;
 
   const stats = [
     {
       label: 'Total Issues',
-      value: total,
+      value: counts?.total ?? data?.total ?? 0,
       icon: AlertOctagon,
       color: 'text-blue-600',
       bg: 'bg-blue-50',
     },
     {
       label: 'Open',
-      value: openCount,
+      value: counts?.open ?? 0,
       icon: Clock,
       color: 'text-amber-600',
       bg: 'bg-amber-50',
     },
     {
       label: 'Resolved',
-      value: resolvedCount,
+      value: counts?.resolved ?? 0,
       icon: CheckCircle2,
       color: 'text-emerald-600',
       bg: 'bg-emerald-50',
     },
     {
       label: 'Rejected',
-      value: rejectedCount,
+      value: counts?.rejected ?? 0,
       icon: Ban,
       color: 'text-red-500',
       bg: 'bg-red-50',
@@ -237,7 +234,7 @@ export function IssueTable() {
       <div className="flex items-center justify-between px-1">
         <p className="text-xs text-muted-foreground">
           Page {pagination.pageIndex + 1} of {data?.totalPages || 1}
-          {total > 0 && ` · ${total} issues`}
+          {(counts?.total ?? data?.total ?? 0) > 0 && ` · ${counts?.total ?? data?.total} issues`}
         </p>
         <div className="flex gap-2">
           <Button

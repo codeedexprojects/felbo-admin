@@ -119,21 +119,21 @@ function DetailSkeleton() {
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
-export default function VendorDetailsPage() {
+export default function AssociationVendorDetailPage() {
   const { vendorId } = useParams<{ vendorId: string }>();
   const router = useRouter();
   const { data: vendor, isLoading, isError } = useVendorDetail(vendorId);
 
   if (isLoading)
     return (
-      <RoleGuard allowedRoles={['SUPER_ADMIN', 'SUB_ADMIN']}>
+      <RoleGuard allowedRoles={['ASSOCIATION_ADMIN']}>
         <DetailSkeleton />
       </RoleGuard>
     );
 
   if (isError || !vendor)
     return (
-      <RoleGuard allowedRoles={['SUPER_ADMIN', 'SUB_ADMIN']}>
+      <RoleGuard allowedRoles={['ASSOCIATION_ADMIN']}>
         <div className="flex flex-col items-center gap-3 py-20 text-muted-foreground">
           <AlertTriangle className="h-8 w-8 opacity-40" />
           <p className="text-sm">Vendor not found or failed to load.</p>
@@ -160,7 +160,7 @@ export default function VendorDetailsPage() {
     : null;
 
   return (
-    <RoleGuard allowedRoles={['SUPER_ADMIN', 'SUB_ADMIN']}>
+    <RoleGuard allowedRoles={['ASSOCIATION_ADMIN']}>
       <div className="space-y-6">
         {/* ── Header ── */}
         <div className="flex flex-wrap items-start gap-4">
@@ -188,9 +188,11 @@ export default function VendorDetailsPage() {
                 <Flag className="h-3 w-3" /> Flagged
               </span>
             )}
-            <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-              {vendor.registrationType}
-            </span>
+            {vendor.associationMemberId && (
+              <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                Member #{vendor.associationMemberId}
+              </span>
+            )}
           </div>
         </div>
 
@@ -215,9 +217,6 @@ export default function VendorDetailsPage() {
                   label="Verified At"
                   value={format(new Date(vendor.verifiedAt), 'dd MMM yyyy')}
                 />
-              )}
-              {vendor.associationMemberId && (
-                <InfoRow icon={Building2} label="Member ID" value={vendor.associationMemberId} />
               )}
               {vendor.verificationNote && (
                 <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">

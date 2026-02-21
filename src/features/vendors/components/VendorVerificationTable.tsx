@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
-import { Search, Users, CheckCircle2, Clock, Ban, Filter } from 'lucide-react';
+import { Search, Users, CheckCircle2, Clock, Ban } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 
@@ -16,11 +16,11 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-import { useVendors } from '@/features/vendors/hooks';
+import { useVerificationRequests } from '@/features/vendors/hooks';
 import { verificationColumns } from './VerificationColumns'; // Specialized columns
 import { useMounted } from '@/hooks/use-mounted';
 import { useDebounce } from '@/hooks/useDebounce';
-import { VendorListFilter, Vendor } from '@/features/vendors/types';
+import { VerificationRequestsFilter } from '@/features/vendors/types';
 
 // Skeleton row component
 function SkeletonRow({ cols }: { cols: number }) {
@@ -40,11 +40,10 @@ export function VendorVerificationTable() {
   const [searchValue, setSearchValue] = React.useState('');
   const debouncedSearch = useDebounce(searchValue, 500);
 
-  // Hardcode verificationStatus to PENDING
-  const [filter, setFilter] = React.useState<VendorListFilter>({
+  // Always fetches PENDING — filter is baked into the dedicated endpoint
+  const [filter, setFilter] = React.useState<VerificationRequestsFilter>({
     page: 1,
     limit: 10,
-    verificationStatus: 'PENDING',
   });
 
   React.useEffect(() => {
@@ -56,7 +55,7 @@ export function VendorVerificationTable() {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   }, [debouncedSearch]);
 
-  const { data, isLoading, isError } = useVendors(filter);
+  const { data, isLoading, isError } = useVerificationRequests(filter);
   const mounted = useMounted();
 
   const table = useReactTable({
@@ -71,40 +70,31 @@ export function VendorVerificationTable() {
 
   if (!mounted) return null;
 
-  // Stats
-  const vendors = data?.vendors || [];
-  const totalPending = data?.total || 0;
-  // These counts can only be accurate if we fetch all or have separate stats API.
-  // For now, based on current page or just placeholder if not available.
-  const associationPending = vendors.filter(
-    (v: Vendor) => v.registrationType === 'ASSOCIATION'
-  ).length;
-  const independentPending = vendors.filter(
-    (v: Vendor) => v.registrationType === 'INDEPENDENT'
-  ).length;
+  // Stats — sourced from server-side counts (accurate across all pages)
+  const counts = data?.counts;
 
   const stats = [
     {
       label: 'Pending Requests',
-      value: totalPending,
+      value: counts?.pending ?? data?.total ?? 0,
       icon: Clock,
       color: 'text-amber-600',
       bg: 'bg-amber-50',
     },
     {
       label: 'Association',
-      value: associationPending + '+',
+      value: counts?.association ?? 0,
       icon: Users,
       color: 'text-blue-600',
       bg: 'bg-blue-50',
-    }, // Approximate
+    },
     {
       label: 'Independent',
-      value: independentPending + '+',
+      value: counts?.independent ?? 0,
       icon: Users,
       color: 'text-purple-600',
       bg: 'bg-purple-50',
-    }, // Approximate
+    },
   ];
 
   return (
@@ -142,16 +132,6 @@ export function VendorVerificationTable() {
             onChange={(e) => setSearchValue(e.target.value)}
           />
         </div>
-
-        {/* Filters placeholder - Requesting Registration Type filter support from backend later */}
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 gap-1.5 text-xs border-border/60 text-muted-foreground"
-        >
-          <Filter className="h-3 w-3" />
-          More Filters
-        </Button>
       </div>
 
       {/* Table */}
@@ -222,7 +202,8 @@ export function VendorVerificationTable() {
       <div className="flex items-center justify-between px-1">
         <p className="text-xs text-muted-foreground">
           Page {pagination.pageIndex + 1} of {data?.totalPages || 1}
-          {totalPending > 0 && ` · ${totalPending} requests`}
+          {(counts?.pending ?? data?.total ?? 0) > 0 &&
+            ` · ${counts?.pending ?? data?.total} requests`}
         </p>
         <div className="flex gap-2">
           <Button
