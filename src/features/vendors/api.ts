@@ -3,10 +3,21 @@ import {
   VendorListFilter,
   VendorListResponse,
   VendorAdminDetail,
+  VendorRequestDetail,
   VerificationRequestsFilter,
   VerificationRequestsResponse,
 } from './types';
 import { ApiResponse } from '@/types/api';
+
+export const getVendorRequestDetail = async (id: string): Promise<VendorRequestDetail> => {
+  const response = await axios.get<ApiResponse<VendorRequestDetail>>(
+    `/admin/vendors/requests/${id}`
+  );
+  if (!response.data.success) {
+    throw new Error(response.data.error?.message || 'Failed to fetch request detail');
+  }
+  return response.data.data;
+};
 
 export const getVerificationRequests = async (
   filters: VerificationRequestsFilter = { page: 1, limit: 10 }

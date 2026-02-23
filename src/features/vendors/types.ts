@@ -67,8 +67,17 @@ export interface VerificationRequestsFilter {
   search?: string;
 }
 
+export interface VerificationRequestItem {
+  id: string;
+  shopName: string | null;
+  ownerName: string;
+  phone: string;
+  type: 'ASSOCIATION' | 'INDEPENDENT';
+  submitted: string;
+}
+
 export interface VerificationRequestsResponse {
-  vendors: Vendor[];
+  vendors: VerificationRequestItem[];
   total: number;
   page: number;
   limit: number;
@@ -97,7 +106,7 @@ export interface VendorAdminDetail {
   associationIdProofUrl?: string;
   cancellationCount: number;
   cancellationsThisWeek: number;
-  shop: {
+  shops: {
     id: string;
     name: string;
     shopType: string;
@@ -107,22 +116,55 @@ export interface VendorAdminDetail {
     onboardingStatus: string;
     status: string;
     isActive: boolean;
-  } | null;
-  barbers: {
-    id: string;
-    name: string;
-    phone: string;
-    photo?: string;
-    isActive: boolean;
+    barbers: {
+      id: string;
+      name: string;
+      phone: string;
+      photo?: string;
+      isActive: boolean;
+    }[];
+    barberCount: number;
+    services: {
+      id: string;
+      name: string;
+      basePrice: number;
+      baseDuration: number;
+      description?: string;
+    }[];
+    serviceCount: number;
   }[];
-  barberCount: number;
-  services: {
-    id: string;
-    name: string;
-    basePrice: number;
-    baseDuration: number;
-    description?: string;
-  }[];
-  serviceCount: number;
   recentBookings: unknown[];
+}
+
+export interface VendorRequestDetail {
+  id: string;
+  phone: string;
+  email: string | null;
+  ownerName: string;
+  registrationType: 'ASSOCIATION' | 'INDEPENDENT';
+  registrationDate: string;
+  verificationStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
+  verificationNote?: string;
+  // Association-specific
+  associationMemberId?: string;
+  associationIdProofUrl?: string;
+  // Independent-specific
+  registrationPayment?: {
+    amount: number;
+    paymentId: string;
+    paidAt: string;
+  };
+  documents?: {
+    shopLicense?: string;
+    ownerIdProof?: string;
+  };
+  shopDetails?: {
+    name: string;
+    type: string;
+    address: AddressInput;
+    location?: {
+      type: 'Point';
+      coordinates: [number, number];
+    };
+  };
 }

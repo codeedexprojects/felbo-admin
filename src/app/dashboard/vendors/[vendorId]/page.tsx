@@ -22,7 +22,10 @@ import {
   Flag,
   MapPin,
   User,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
+import { useState } from 'react';
 
 // ─── Status pill ─────────────────────────────────────────────────────────────
 function StatusPill({ status, type }: { status: string; type: 'verification' | 'account' }) {
@@ -118,6 +121,176 @@ function DetailSkeleton() {
   );
 }
 
+// ─── Shop card (collapsible) ──────────────────────────────────────────────────
+function ShopCard({
+  shop,
+  index,
+}: {
+  shop: NonNullable<ReturnType<typeof useVendorDetail>['data']>['shops'][number];
+  index: number;
+}) {
+  const [expanded, setExpanded] = useState(index === 0); // first shop open by default
+
+  const addressLine = [
+    shop.address.line1,
+    shop.address.line2,
+    shop.address.area,
+    shop.address.city,
+    shop.address.district,
+    shop.address.state,
+    shop.address.pincode,
+  ]
+    .filter(Boolean)
+    .join(', ');
+
+  return (
+    <Card className="border-border/60 shadow-sm">
+      {/* Shop header — always visible */}
+      <CardHeader
+        className="cursor-pointer pb-3 select-none"
+        onClick={() => setExpanded((p) => !p)}
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+            <Building2 className="h-4 w-4 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-foreground truncate">{shop.name}</p>
+            <p className="text-[11px] text-muted-foreground">
+              {shop.shopType} · {shop.address.city}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <span
+              className={cn(
+                'rounded-full px-2 py-0.5 text-[10px] font-medium ring-1',
+                shop.isActive
+                  ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
+                  : 'bg-gray-100 text-gray-500 ring-gray-200'
+              )}
+            >
+              {shop.isActive ? 'Active' : 'Inactive'}
+            </span>
+            {expanded ? (
+              <ChevronUp className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            )}
+          </div>
+        </div>
+      </CardHeader>
+
+      {expanded && (
+        <CardContent className="space-y-5 pt-0">
+          {/* Basic shop info */}
+          <div className="space-y-3">
+            <InfoRow icon={Phone} label="Shop Phone" value={shop.phone} />
+            {addressLine && <InfoRow icon={MapPin} label="Address" value={addressLine} />}
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted">
+                <Star className="h-3.5 w-3.5 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Rating</p>
+                <p className="text-sm font-medium text-foreground">
+                  {shop.rating.average.toFixed(1)}{' '}
+                  <span className="font-normal text-muted-foreground">
+                    ({shop.rating.count} reviews)
+                  </span>
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">
+                {shop.onboardingStatus}
+              </span>
+              <span className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">
+                {shop.status}
+              </span>
+            </div>
+          </div>
+
+          {/* Barbers */}
+          {shop.barberCount > 0 && (
+            <div>
+              <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <Scissors className="h-3.5 w-3.5" />
+                Barbers ({shop.barberCount})
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {shop.barbers.map((barber) => (
+                  <div
+                    key={barber.id}
+                    className="flex items-center gap-3 rounded-lg border border-border/60 bg-muted/20 px-3 py-2.5"
+                  >
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-semibold">
+                      {barber.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-foreground">{barber.name}</p>
+                      <p className="truncate text-xs text-muted-foreground">{barber.phone}</p>
+                    </div>
+                    <span
+                      className={cn(
+                        'ml-auto shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ring-1',
+                        barber.isActive
+                          ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
+                          : 'bg-gray-100 text-gray-500 ring-gray-200'
+                      )}
+                    >
+                      {barber.isActive ? 'Active' : 'Off'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Services */}
+          {shop.serviceCount > 0 && (
+            <div>
+              <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <Wrench className="h-3.5 w-3.5" />
+                Services ({shop.serviceCount})
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {shop.services.map((service) => (
+                  <div
+                    key={service.id}
+                    className="space-y-1 rounded-lg border border-border/60 bg-muted/20 px-3 py-2.5"
+                  >
+                    <p className="text-sm font-medium text-foreground">{service.name}</p>
+                    {service.description && (
+                      <p className="line-clamp-1 text-xs text-muted-foreground">
+                        {service.description}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-semibold text-primary">
+                        ₹{service.basePrice}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {service.baseDuration} min
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Empty state for barbers+services */}
+          {shop.barberCount === 0 && shop.serviceCount === 0 && (
+            <p className="text-center text-xs text-muted-foreground italic py-3">
+              No barbers or services set up yet.
+            </p>
+          )}
+        </CardContent>
+      )}
+    </Card>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function VendorDetailsPage() {
   const { vendorId } = useParams<{ vendorId: string }>();
@@ -143,21 +316,6 @@ export default function VendorDetailsPage() {
         </div>
       </RoleGuard>
     );
-
-  const address = vendor.shop?.address;
-  const addressLine = address
-    ? [
-        address.line1,
-        address.line2,
-        address.area,
-        address.city,
-        address.district,
-        address.state,
-        address.pincode,
-      ]
-        .filter(Boolean)
-        .join(', ')
-    : null;
 
   return (
     <RoleGuard allowedRoles={['SUPER_ADMIN', 'SUB_ADMIN']}>
@@ -194,7 +352,7 @@ export default function VendorDetailsPage() {
           </div>
         </div>
 
-        {/* ── Vendor info + Shop ── */}
+        {/* ── Vendor info + Cancellations ── */}
         <div className="grid gap-6 md:grid-cols-2">
           {/* Vendor Info */}
           <Card className="border-border/60 shadow-sm">
@@ -230,62 +388,6 @@ export default function VendorDetailsPage() {
             </CardContent>
           </Card>
 
-          {/* Shop Info */}
-          <Card className="border-border/60 shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold">Shop</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {vendor.shop ? (
-                <div className="space-y-4">
-                  <InfoRow icon={Building2} label="Shop Name" value={vendor.shop.name} />
-                  <InfoRow icon={Building2} label="Type" value={vendor.shop.shopType} />
-                  <InfoRow icon={Phone} label="Shop Phone" value={vendor.shop.phone} />
-                  {addressLine && <InfoRow icon={MapPin} label="Address" value={addressLine} />}
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted">
-                      <Star className="h-3.5 w-3.5 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                        Rating
-                      </p>
-                      <p className="text-sm font-medium text-foreground">
-                        {vendor.shop.rating.average.toFixed(1)}{' '}
-                        <span className="font-normal text-muted-foreground">
-                          ({vendor.shop.rating.count} reviews)
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={cn(
-                        'rounded-full px-2.5 py-1 text-xs font-medium ring-1',
-                        vendor.shop.isActive
-                          ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
-                          : 'bg-gray-100 text-gray-500 ring-gray-200'
-                      )}
-                    >
-                      {vendor.shop.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                    <span className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">
-                      {vendor.shop.onboardingStatus}
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex h-32 flex-col items-center justify-center gap-2 text-muted-foreground">
-                  <Building2 className="h-6 w-6 opacity-30" />
-                  <p className="text-sm">No shop set up yet</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* ── Cancellations + Documents ── */}
-        <div className="grid gap-6 md:grid-cols-2">
           {/* Cancellations */}
           <Card className="border-border/60 shadow-sm">
             <CardHeader className="pb-3">
@@ -306,103 +408,42 @@ export default function VendorDetailsPage() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Documents */}
-          <Card className="border-border/60 shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                <FileText className="h-4 w-4" /> Documents
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <DocLink label="Shop License" url={vendor.documents?.shopLicense} />
-              <DocLink label="Owner ID Proof" url={vendor.documents?.ownerIdProof} />
-              {vendor.associationIdProofUrl && (
-                <DocLink label="Association ID Proof" url={vendor.associationIdProofUrl} />
-              )}
-            </CardContent>
-          </Card>
         </div>
 
-        {/* ── Barbers ── */}
-        {vendor.barberCount > 0 && (
-          <Card className="border-border/60 shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                <Scissors className="h-4 w-4" />
-                Barbers
-                <span className="ml-auto text-xs font-normal text-muted-foreground">
-                  {vendor.barberCount} total
-                </span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {vendor.barbers.map((barber) => (
-                  <div
-                    key={barber.id}
-                    className="flex items-center gap-3 rounded-lg border border-border/60 bg-muted/20 px-4 py-3"
-                  >
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-semibold">
-                      {barber.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-foreground">{barber.name}</p>
-                      <p className="truncate text-xs text-muted-foreground">{barber.phone}</p>
-                    </div>
-                    <span
-                      className={cn(
-                        'ml-auto shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ring-1',
-                        barber.isActive
-                          ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
-                          : 'bg-gray-100 text-gray-500 ring-gray-200'
-                      )}
-                    >
-                      {barber.isActive ? 'Active' : 'Off'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {/* ── Documents ── */}
+        <Card className="border-border/60 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+              <FileText className="h-4 w-4" /> Documents
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-2 sm:grid-cols-2">
+            <DocLink label="Shop License" url={vendor.documents?.shopLicense} />
+            <DocLink label="Owner ID Proof" url={vendor.documents?.ownerIdProof} />
+            {vendor.associationIdProofUrl && (
+              <DocLink label="Association ID Proof" url={vendor.associationIdProofUrl} />
+            )}
+          </CardContent>
+        </Card>
 
-        {/* ── Services ── */}
-        {vendor.serviceCount > 0 && (
+        {/* ── Shops ── */}
+        {vendor.shops.length > 0 ? (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-semibold text-foreground">Shops</h2>
+              <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                {vendor.shops.length}
+              </span>
+            </div>
+            {vendor.shops.map((shop, i) => (
+              <ShopCard key={shop.id} shop={shop} index={i} />
+            ))}
+          </div>
+        ) : (
           <Card className="border-border/60 shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                <Wrench className="h-4 w-4" />
-                Services
-                <span className="ml-auto text-xs font-normal text-muted-foreground">
-                  {vendor.serviceCount} total
-                </span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {vendor.services.map((service) => (
-                  <div
-                    key={service.id}
-                    className="space-y-1 rounded-lg border border-border/60 bg-muted/20 px-4 py-3"
-                  >
-                    <p className="text-sm font-medium text-foreground">{service.name}</p>
-                    {service.description && (
-                      <p className="line-clamp-1 text-xs text-muted-foreground">
-                        {service.description}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-3 pt-1">
-                      <span className="text-sm font-semibold text-primary">
-                        ₹{service.basePrice}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {service.baseDuration} min
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <CardContent className="flex h-24 flex-col items-center justify-center gap-2 text-muted-foreground">
+              <Building2 className="h-6 w-6 opacity-30" />
+              <p className="text-sm">No shops set up yet</p>
             </CardContent>
           </Card>
         )}
