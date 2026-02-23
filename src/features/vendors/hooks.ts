@@ -7,6 +7,7 @@ import {
   verifyVendor,
   rejectVendor,
   getVerificationRequests,
+  getVendorRequestDetail,
 } from './api';
 import {
   VendorListFilter,
@@ -14,6 +15,14 @@ import {
   VerificationRequestsFilter,
   VerificationRequestsResponse,
 } from './types';
+
+export const useVendorRequestDetail = (id: string) => {
+  return useQuery({
+    queryKey: ['vendor-request-detail', id],
+    queryFn: () => getVendorRequestDetail(id),
+    enabled: !!id,
+  });
+};
 
 export const useVerificationRequests = (filters: VerificationRequestsFilter) => {
   return useQuery({
