@@ -28,7 +28,7 @@ export interface IssueDetail {
   id: string;
   bookingId: string;
   user: { id: string; name: string; phone: string } | null;
-  vendor: { id: string; name: string; phone: string } | null;
+  vendor: { id: string; name: string; phone: string; isFlagged: boolean } | null;
   shop: {
     id: string;
     name: string;
@@ -43,6 +43,7 @@ export interface IssueDetail {
   userLocation: { lat: number; lng: number } | null;
   photoUrl: string | null;
   reviewedBy: string | null;
+  adminNote: string | null;
   createdAt: string;
   updatedAt: string;
 }
