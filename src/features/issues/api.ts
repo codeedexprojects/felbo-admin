@@ -31,3 +31,38 @@ export const getIssueById = async (id: string): Promise<IssueDetail> => {
 
   return response.data.data;
 };
+
+export const updateIssueStatus = async (
+  id: string,
+  status: 'RESOLVED' | 'REJECTED',
+  reason: string
+): Promise<void> => {
+  const response = await apiClient.patch<ApiResponse<void>>(`/issues/${id}/status`, {
+    status,
+    reason,
+  });
+
+  if (!response.data.success) {
+    throw new Error(response.data.error?.message || 'Failed to update issue status');
+  }
+};
+
+export const flagVendorForIssue = async (id: string): Promise<{ alreadyFlagged: boolean }> => {
+  const response = await apiClient.post<ApiResponse<{ alreadyFlagged: boolean }>>(
+    `/issues/${id}/flag-vendor`
+  );
+
+  if (!response.data.success) {
+    throw new Error(response.data.error?.message || 'Failed to flag vendor');
+  }
+
+  return response.data.data;
+};
+
+export const processRefundForIssue = async (id: string): Promise<void> => {
+  const response = await apiClient.post<ApiResponse<void>>(`/issues/${id}/refund`);
+
+  if (!response.data.success) {
+    throw new Error(response.data.error?.message || 'Failed to process refund');
+  }
+};

@@ -38,8 +38,18 @@ export interface VendorStatusCounts {
   suspended: number;
 }
 
+export interface VendorListItem {
+  id: string;
+  ownerName: string;
+  phone: string;
+  type: 'ASSOCIATION' | 'INDEPENDENT';
+  verificationStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
+  status: 'PENDING' | 'ACTIVE' | 'SUSPENDED' | 'DELETED';
+  registered: string;
+}
+
 export interface VendorListResponse {
-  vendors: Vendor[];
+  vendors: VendorListItem[];
   total: number;
   page: number;
   limit: number;

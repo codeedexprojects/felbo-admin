@@ -1,7 +1,7 @@
 'use client';
 
 import { ColumnDef } from '@tanstack/react-table';
-import { Vendor } from '@/features/vendors/types';
+import { VendorListItem } from '@/features/vendors/types';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal, ArrowUpDown, Eye, Store } from 'lucide-react';
@@ -16,7 +16,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
-// Modern soft pill badge
+// ─── Status pill ──────────────────────────────────────────────────────────────
 function StatusPill({ status, type }: { status: string; type: 'verification' | 'account' }) {
   const verificationMap: Record<string, string> = {
     APPROVED: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
@@ -29,10 +29,8 @@ function StatusPill({ status, type }: { status: string; type: 'verification' | '
     DELETED: 'bg-gray-100 text-gray-500 ring-gray-200',
     PENDING: 'bg-gray-100 text-gray-500 ring-gray-200',
   };
-
   const map = type === 'verification' ? verificationMap : accountMap;
   const cls = map[status] || 'bg-gray-100 text-gray-500 ring-gray-200';
-
   return (
     <span
       className={cn(
@@ -45,7 +43,44 @@ function StatusPill({ status, type }: { status: string; type: 'verification' | '
   );
 }
 
-export const columns: ColumnDef<Vendor>[] = [
+// ─── Action cell (extracted so useRouter is called at component level) ────────
+function ActionCell({ vendor }: { vendor: VendorListItem }) {
+  const router = useRouter();
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+        >
+          <span className="sr-only">Open menu</span>
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-44">
+        <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+          Actions
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          className="gap-2 text-sm"
+          onClick={() => router.push(`/dashboard/vendors/${vendor.id}`)}
+        >
+          <Eye className="h-3.5 w-3.5 text-muted-foreground" />
+          View details
+        </DropdownMenuItem>
+        <DropdownMenuItem className="gap-2 text-sm">
+          <Store className="h-3.5 w-3.5 text-muted-foreground" />
+          Manage shop
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+// ─── Column definitions ───────────────────────────────────────────────────────
+export const columns: ColumnDef<VendorListItem>[] = [
   {
     accessorKey: 'ownerName',
     header: ({ column }) => (
@@ -71,10 +106,10 @@ export const columns: ColumnDef<Vendor>[] = [
     ),
   },
   {
-    accessorKey: 'registrationType',
+    accessorKey: 'type',
     header: 'Type',
     cell: ({ row }) => {
-      const type = row.getValue('registrationType') as string;
+      const type = row.getValue('type') as string;
       return (
         <span className="text-xs font-medium text-muted-foreground">
           {type ? type.replace('_', ' ') : '—'}
@@ -95,51 +130,16 @@ export const columns: ColumnDef<Vendor>[] = [
     cell: ({ row }) => <StatusPill status={row.getValue('status')} type="account" />,
   },
   {
-    accessorKey: 'createdAt',
+    accessorKey: 'registered',
     header: 'Registered',
     cell: ({ row }) => (
       <span className="text-xs text-muted-foreground">
-        {format(new Date(row.getValue('createdAt')), 'dd MMM yyyy')}
+        {format(new Date(row.getValue('registered')), 'dd MMM yyyy')}
       </span>
     ),
   },
   {
     id: 'actions',
-    cell: ({ row }) => {
-      const vendor = row.original;
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      const router = useRouter();
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-muted-foreground hover:text-foreground"
-            >
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44">
-            <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
-              Actions
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="gap-2 text-sm"
-              onClick={() => router.push(`/dashboard/vendors/${vendor.id}`)}
-            >
-              <Eye className="h-3.5 w-3.5 text-muted-foreground" />
-              View details
-            </DropdownMenuItem>
-            <DropdownMenuItem className="gap-2 text-sm">
-              <Store className="h-3.5 w-3.5 text-muted-foreground" />
-              Manage shop
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    },
+    cell: ({ row }) => <ActionCell vendor={row.original} />,
   },
 ];

@@ -2,11 +2,30 @@
 
 import Link from 'next/link';
 import { format } from 'date-fns';
-import { ArrowLeft, MapPin, Image as ImageIcon, User, Store, Scissors } from 'lucide-react';
+import { useState } from 'react';
+import {
+  ArrowLeft,
+  MapPin,
+  Image as ImageIcon,
+  User,
+  Store,
+  Scissors,
+  CheckCircle2,
+  XCircle,
+  Flag,
+  Loader2,
+  Undo2,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
-import { useIssueById } from '@/features/issues/hooks';
+import {
+  useIssueById,
+  useUpdateIssueStatus,
+  useFlagVendorForIssue,
+  useProcessRefund,
+} from '@/features/issues/hooks';
 import {
   IssueStatus,
   IssueType,
@@ -151,6 +170,32 @@ function IssueDetailSkeleton() {
 export default function IssueDetailPage({ params }: { params: { issueId: string } }) {
   const { issueId } = params;
   const { data: issue, isLoading, isError } = useIssueById(issueId);
+  const updateStatus = useUpdateIssueStatus(issueId);
+  const flagVendor = useFlagVendorForIssue(issueId);
+  const processRefund = useProcessRefund(issueId);
+
+  const [actionMode, setActionMode] = useState<'RESOLVED' | 'REJECTED' | null>(null);
+  const [adminNote, setAdminNote] = useState('');
+
+  const isOpen = issue?.status === 'OPEN';
+  const isResolved = issue?.status === 'RESOLVED';
+  const isBusy = updateStatus.isPending || flagVendor.isPending || processRefund.isPending;
+
+  const handleSubmitAction = () => {
+    if (!actionMode || !adminNote.trim()) return;
+    updateStatus.mutate(
+      { status: actionMode, reason: adminNote.trim() },
+      {
+        onSuccess: () => {
+          setActionMode(null);
+          setAdminNote('');
+        },
+      }
+    );
+  };
+
+  const handleFlagVendor = () => flagVendor.mutate();
+  const handleProcessRefund = () => processRefund.mutate();
 
   if (isLoading) return <IssueDetailSkeleton />;
 
@@ -172,7 +217,7 @@ export default function IssueDetailPage({ params }: { params: { issueId: string 
 
   return (
     <div className="space-y-6">
-      {/* Back + header */}
+      {/* Back */}
       <div className="flex items-center justify-between">
         <Button variant="ghost" size="sm" asChild>
           <Link href="/dashboard/issues">
@@ -182,16 +227,156 @@ export default function IssueDetailPage({ params }: { params: { issueId: string 
         </Button>
       </div>
 
-      <div className="flex items-start justify-between">
-        <div className="space-y-1">
-          <h2 className="text-lg font-semibold tracking-tight text-foreground">Issue Detail</h2>
-          <p className="text-xs text-muted-foreground font-mono">{issue.id}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <StatusBadge status={issue.status} />
-          <RefundBadge status={issue.refundStatus} />
-        </div>
+      {/* Header */}
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold tracking-tight text-foreground">Issue Detail</h2>
+        <p className="text-xs text-muted-foreground font-mono">{issue.id}</p>
       </div>
+
+      {/* Action Panel — shown when issue is OPEN or flag vendor/refund is available */}
+      {(isOpen || issue.vendor || isResolved) && (
+        <div className="rounded-xl border border-border/60 bg-card p-4 space-y-3 shadow-sm">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+            Actions
+          </p>
+
+          {!actionMode ? (
+            <div className="flex flex-wrap gap-2">
+              {isOpen && (
+                <>
+                  <Button
+                    size="sm"
+                    className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+                    onClick={() => setActionMode('RESOLVED')}
+                    disabled={isBusy}
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Resolve
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
+                    onClick={() => setActionMode('REJECTED')}
+                    disabled={isBusy}
+                  >
+                    <XCircle className="h-3.5 w-3.5" />
+                    Reject
+                  </Button>
+                </>
+              )}
+
+              {issue.vendor && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className={cn(
+                    'gap-1.5',
+                    issue.vendor.isFlagged
+                      ? 'border-amber-400 bg-amber-50 text-amber-700 disabled:opacity-100 cursor-not-allowed font-medium shadow-none'
+                      : 'border-orange-500 text-orange-600 hover:bg-orange-50 hover:text-orange-700'
+                  )}
+                  onClick={handleFlagVendor}
+                  disabled={isBusy || issue.vendor.isFlagged}
+                >
+                  {flagVendor.isPending ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Flag className="h-3.5 w-3.5" />
+                  )}
+                  {issue.vendor.isFlagged ? 'Already Flagged' : 'Flag Vendor'}
+                </Button>
+              )}
+
+              {isResolved && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className={cn(
+                    'gap-1.5',
+                    issue.refundStatus === 'ISSUED'
+                      ? 'border-blue-400 bg-blue-50 text-blue-700 disabled:opacity-100 cursor-not-allowed font-medium shadow-none'
+                      : issue.refundStatus === 'PENDING'
+                        ? 'border-gray-300 bg-gray-50 text-gray-500 disabled:opacity-100 cursor-not-allowed font-medium shadow-none'
+                        : 'border-blue-500 text-blue-600 hover:bg-blue-50 hover:text-blue-700'
+                  )}
+                  onClick={handleProcessRefund}
+                  disabled={
+                    isBusy ||
+                    issue.refundStatus === 'ISSUED' ||
+                    issue.refundStatus === 'PENDING' ||
+                    processRefund.isPending
+                  }
+                >
+                  {processRefund.isPending ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Undo2 className="h-3.5 w-3.5" />
+                  )}
+                  {issue.refundStatus === 'ISSUED'
+                    ? 'Refunded'
+                    : issue.refundStatus === 'PENDING'
+                      ? 'Refund Pending'
+                      : 'Issue Refund'}
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <Textarea
+                placeholder={`Required note for ${actionMode.toLowerCase()} issue...`}
+                className="resize-none text-sm h-24"
+                value={adminNote}
+                onChange={(e) => setAdminNote(e.target.value)}
+              />
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  className={cn(
+                    'gap-1.5 text-white',
+                    actionMode === 'RESOLVED'
+                      ? 'bg-emerald-600 hover:bg-emerald-700'
+                      : 'bg-red-600 hover:bg-red-700'
+                  )}
+                  onClick={handleSubmitAction}
+                  disabled={!adminNote.trim() || updateStatus.isPending}
+                >
+                  {updateStatus.isPending ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : actionMode === 'RESOLVED' ? (
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                  ) : (
+                    <XCircle className="h-3.5 w-3.5" />
+                  )}
+                  Confirm {actionMode === 'RESOLVED' ? 'Resolve' : 'Reject'}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setActionMode(null);
+                    setAdminNote('');
+                  }}
+                  disabled={updateStatus.isPending}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {updateStatus.isError && (
+            <p className="text-xs text-red-500">{(updateStatus.error as Error)?.message}</p>
+          )}
+          {flagVendor.isError && (
+            <p className="text-xs text-red-500">{(flagVendor.error as Error)?.message}</p>
+          )}
+          {processRefund.isError && (
+            <p className="text-xs text-red-500">{(processRefund.error as Error)?.message}</p>
+          )}
+        </div>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Issue info */}
@@ -217,10 +402,18 @@ export default function IssueDetailPage({ params }: { params: { issueId: string 
             label="Updated"
             value={format(new Date(issue.updatedAt), 'dd MMM yyyy, hh:mm a')}
           />
-          <div className="py-3">
+          <div className="py-3 border-b border-border/30 last:border-0">
             <p className="text-xs text-muted-foreground mb-1">Description</p>
             <p className="text-sm text-foreground leading-relaxed">{issue.description}</p>
           </div>
+          {issue.adminNote && (
+            <div className="py-3">
+              <p className="text-xs text-muted-foreground mb-1">Admin Note</p>
+              <p className="text-sm text-foreground leading-relaxed bg-muted/50 p-2 rounded-md border border-border/40">
+                {issue.adminNote}
+              </p>
+            </div>
+          )}
         </Card>
 
         {/* User info */}
@@ -254,6 +447,18 @@ export default function IssueDetailPage({ params }: { params: { issueId: string 
               <InfoRow
                 label="Vendor ID"
                 value={<span className="font-mono text-xs">{issue.vendor.id}</span>}
+              />
+              <InfoRow
+                label="Flagged"
+                value={
+                  issue.vendor.isFlagged ? (
+                    <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 bg-amber-50 text-amber-700 ring-amber-200">
+                      <Flag className="h-3 w-3" /> Flagged
+                    </span>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">No</span>
+                  )
+                }
               />
             </>
           ) : (
