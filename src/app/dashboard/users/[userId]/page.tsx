@@ -1,4 +1,257 @@
-// User details
-export default function UserDetailsPage() {
-  return <div>User Details</div>;
+'use client';
+
+import Link from 'next/link';
+import { format } from 'date-fns';
+import {
+  ArrowLeft,
+  User as UserIcon,
+  CreditCard,
+  Ban,
+  Calendar,
+  AlertTriangle,
+  Clock,
+  ShieldAlert,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { useUserById } from '@/features/users/hooks';
+
+function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-start justify-between gap-4 py-2.5 border-b border-border/40 last:border-0">
+      <span className="text-xs text-muted-foreground shrink-0 w-32">{label}</span>
+      <span className="text-sm text-foreground text-right">{value}</span>
+    </div>
+  );
+}
+
+function Card({
+  title,
+  icon: Icon,
+  children,
+}: {
+  title: string;
+  icon: React.ElementType;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden h-full flex flex-col">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-border/40 bg-muted/30">
+        <Icon className="h-4 w-4 text-muted-foreground" />
+        <h3 className="text-sm font-medium text-foreground">{title}</h3>
+      </div>
+      <div className="px-4 py-1 flex-1">{children}</div>
+    </div>
+  );
+}
+
+function UserDetailSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <Skeleton className="h-8 w-32" />
+        <Skeleton className="h-8 w-24" />
+      </div>
+      <div className="space-y-2">
+        <Skeleton className="h-6 w-48" />
+        <Skeleton className="h-4 w-64" />
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        {Array.from({ length: 2 }).map((_, i) => (
+          <div key={i} className="rounded-xl border border-border/60 p-4 space-y-4">
+            <Skeleton className="h-5 w-32" />
+            <div className="space-y-3">
+              {Array.from({ length: 4 }).map((_, j) => (
+                <div key={j} className="flex justify-between border-b border-border/30 pb-3 h-8">
+                  <Skeleton className="h-3 w-24" />
+                  <Skeleton className="h-3 w-32" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="rounded-xl border border-border/60 p-4 space-y-4">
+        <Skeleton className="h-5 w-40" />
+        <Skeleton className="h-24 w-full" />
+      </div>
+    </div>
+  );
+}
+
+export default function UserDetailPage({ params }: { params: { userId: string } }) {
+  const { userId } = params;
+  const { data: user, isLoading, isError } = useUserById(userId);
+
+  if (isLoading) return <UserDetailSkeleton />;
+
+  if (isError || !user) {
+    return (
+      <div className="space-y-6">
+        <Button variant="ghost" size="sm" asChild>
+          <Link href="/dashboard/users">
+            <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+            Back to Users
+          </Link>
+        </Button>
+        <div className="rounded-xl border border-border/60 bg-card p-8 text-center text-muted-foreground">
+          <p className="text-sm">User not found or failed to load.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Back and Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-4">
+          <Button variant="ghost" size="sm" asChild className="-ml-2">
+            <Link href="/dashboard/users">
+              <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+              Back to Users
+            </Link>
+          </Button>
+
+          <div className="space-y-1">
+            <h2 className="text-xl font-bold tracking-tight flex items-center gap-2">
+              {user.name}
+              <Badge
+                variant={
+                  user.status === 'ACTIVE'
+                    ? 'default'
+                    : user.status === 'BLOCKED'
+                      ? 'destructive'
+                      : 'secondary'
+                }
+                className={cn(
+                  'ml-2 shadow-none border-none py-0.5',
+                  user.status === 'ACTIVE' && 'bg-emerald-100 text-emerald-800',
+                  user.status === 'BLOCKED' && 'bg-red-100 text-red-800'
+                )}
+              >
+                {user.status}
+              </Badge>
+            </h2>
+            <p className="text-xs text-muted-foreground font-mono">ID: {user.id}</p>
+          </div>
+        </div>
+      </div>
+
+      {user.status === 'BLOCKED' && user.blockReason && (
+        <div className="rounded-xl bg-red-50 border border-red-100 p-4 flex gap-3">
+          <ShieldAlert className="h-5 w-5 text-red-600 shrink-0" />
+          <div className="space-y-1">
+            <h4 className="text-sm font-semibold text-red-900">User is Blocked</h4>
+            <p className="text-sm text-red-700 leading-relaxed">{user.blockReason}</p>
+          </div>
+        </div>
+      )}
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* Profile Info */}
+        <Card title="Profile Information" icon={UserIcon}>
+          <InfoRow label="Full Name" value={user.name} />
+          <InfoRow label="Phone" value={<span className="font-mono text-sm">{user.phone}</span>} />
+          {user.email && (
+            <InfoRow label="Email" value={<span className="text-sm">{user.email}</span>} />
+          )}
+          <InfoRow
+            label="Registered On"
+            value={format(new Date(user.registeredAt), 'dd MMM yyyy, hh:mm a')}
+          />
+          <InfoRow
+            label="Last Login"
+            value={
+              user.lastLoginAt ? (
+                format(new Date(user.lastLoginAt), 'dd MMM yyyy, hh:mm a')
+              ) : (
+                <span className="text-muted-foreground italic">Never logged in</span>
+              )
+            }
+          />
+        </Card>
+
+        {/* Account Details */}
+        <Card title="Account Activity" icon={CreditCard}>
+          <InfoRow
+            label="Wallet Balance"
+            value={
+              <span className="font-mono text-sm font-semibold text-emerald-600">
+                ₹{user.walletBalance.toFixed(2)}
+              </span>
+            }
+          />
+          <InfoRow
+            label="Cancellations"
+            value={
+              <span className="inline-flex items-center gap-1.5 font-mono text-sm">
+                <Ban className="h-3.5 w-3.5 text-muted-foreground" />
+                {user.cancellationCount}
+              </span>
+            }
+          />
+          <InfoRow
+            label="Issues Reported"
+            value={
+              <span className="inline-flex items-center gap-1.5 font-mono text-sm">
+                <AlertTriangle className="h-3.5 w-3.5 text-muted-foreground" />
+                {user.issueCount}
+              </span>
+            }
+          />
+        </Card>
+      </div>
+
+      {/* Reported Issues Section */}
+      <Card title={`Reported Issues (${user.issueCount})`} icon={AlertTriangle}>
+        {user.issuesReported.length > 0 ? (
+          <div className="py-2 space-y-3">
+            {user.issuesReported.map((issue) => (
+              <div
+                key={issue.id}
+                className="flex flex-col gap-2 rounded-lg border border-border/50 p-3 bg-muted/10 hover:bg-muted/30 transition-colors group"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-[10px] bg-background">
+                      {issue.type.replace(/_/g, ' ')}
+                    </Badge>
+                    <span className="text-xs font-mono text-muted-foreground">{issue.id}</span>
+                  </div>
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      'text-[10px] uppercase border-transparent',
+                      issue.status === 'OPEN' && 'bg-amber-100 text-amber-800',
+                      issue.status === 'RESOLVED' && 'bg-emerald-100 text-emerald-800',
+                      issue.status === 'REJECTED' && 'bg-red-100 text-red-800'
+                    )}
+                  >
+                    {issue.status}
+                  </Badge>
+                </div>
+                <p className="text-sm text-foreground line-clamp-2">{issue.description}</p>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                    <Clock className="h-3 w-3" />
+                    {format(new Date(issue.createdAt), 'MMM dd, yyyy')}
+                  </span>
+                  <Button variant="link" size="sm" className="h-auto p-0 text-[11px]" asChild>
+                    <Link href={`/dashboard/issues/${issue.id}`}>View Issue</Link>
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="py-8 text-center text-sm text-muted-foreground">
+            This user has not reported any issues.
+          </div>
+        )}
+      </Card>
+    </div>
+  );
 }
