@@ -2,9 +2,10 @@
 
 import * as React from 'react';
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
-import { Users, Ban, CheckCircle2, Clock } from 'lucide-react';
+import { Users, Ban, CheckCircle2, Clock, Search } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -23,6 +24,7 @@ import {
 import { useAssociationVendors } from '@/features/association/hooks';
 import { associationVendorColumns } from './AssociationVendorColumns';
 import { useMounted } from '@/hooks/use-mounted';
+import { useDebounce } from '@/hooks/useDebounce';
 import { AssociationVendorListFilter } from '../types';
 
 function SkeletonRow({ cols }: { cols: number }) {
@@ -39,12 +41,19 @@ function SkeletonRow({ cols }: { cols: number }) {
 
 export function AssociationVendorTable() {
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 });
+  const [searchValue, setSearchValue] = React.useState('');
+  const debouncedSearch = useDebounce(searchValue, 500);
   const [filter, setFilter] = React.useState<AssociationVendorListFilter>({ page: 1, limit: 10 });
   const mounted = useMounted();
 
   React.useEffect(() => {
     setFilter((prev) => ({ ...prev, page: pagination.pageIndex + 1, limit: pagination.pageSize }));
   }, [pagination]);
+
+  React.useEffect(() => {
+    setFilter((prev) => ({ ...prev, search: debouncedSearch || undefined, page: 1 }));
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, [debouncedSearch]);
 
   const { data, isLoading, isError } = useAssociationVendors(filter);
 
@@ -118,6 +127,15 @@ export function AssociationVendorTable() {
       </div>
       {/* Filter bar */}
       <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/60 bg-card px-4 py-3 shadow-sm">
+        <div className="relative flex-1 min-w-[180px] max-w-xs">
+          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search vendors..."
+            className="pl-8 h-8 text-sm border-border/60 bg-muted/30 focus-visible:bg-background"
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+          />
+        </div>
         <Select
           value={filter.status || 'ALL'}
           onValueChange={(value) => {

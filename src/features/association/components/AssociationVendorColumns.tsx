@@ -91,22 +91,6 @@ export const associationVendorColumns: ColumnDef<Vendor>[] = [
     ),
   },
   {
-    accessorKey: 'associationMemberId',
-    header: 'Member ID',
-    cell: ({ row }) => {
-      const memberId = row.getValue('associationMemberId') as string | undefined;
-      return <span className="font-mono text-xs text-muted-foreground">{memberId || '—'}</span>;
-    },
-  },
-  {
-    id: 'shopName',
-    header: 'Shop',
-    cell: ({ row }) => {
-      const shop = row.original.shopDetails;
-      return <span className="text-sm text-foreground">{shop?.name || '—'}</span>;
-    },
-  },
-  {
     accessorKey: 'verificationStatus',
     header: 'Verification',
     cell: ({ row }) => (
