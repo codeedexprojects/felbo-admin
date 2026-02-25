@@ -9,6 +9,7 @@ import {
   Settings,
   ShieldCheck,
   Building2,
+  Megaphone,
 } from 'lucide-react';
 import { AdminRole } from '@/types/api';
 
@@ -41,6 +42,12 @@ export const navItems: NavItem[] = [
     title: 'Users',
     href: '/dashboard/users',
     icon: Users,
+    roles: ['SUPER_ADMIN', 'SUB_ADMIN'],
+  },
+  {
+    title: 'Advertisements',
+    href: '/dashboard/advertisements',
+    icon: Megaphone,
     roles: ['SUPER_ADMIN', 'SUB_ADMIN'],
   },
   {
