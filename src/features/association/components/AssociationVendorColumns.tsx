@@ -119,13 +119,15 @@ export const associationVendorColumns: ColumnDef<Vendor>[] = [
     cell: ({ row }) => <StatusPill status={row.getValue('status')} type="account" />,
   },
   {
-    accessorKey: 'createdAt',
+    accessorKey: 'registered',
     header: 'Registered',
-    cell: ({ row }) => (
-      <span className="text-xs text-muted-foreground">
-        {format(new Date(row.getValue('createdAt')), 'dd MMM yyyy')}
-      </span>
-    ),
+    cell: ({ row }) => {
+      const raw = row.getValue('registered') as string | undefined;
+      if (!raw) return <span className="text-xs text-muted-foreground">—</span>;
+      const date = new Date(raw);
+      if (isNaN(date.getTime())) return <span className="text-xs text-muted-foreground">—</span>;
+      return <span className="text-xs text-muted-foreground">{format(date, 'dd MMM yyyy')}</span>;
+    },
   },
   {
     id: 'actions',
