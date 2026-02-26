@@ -1,50 +1,80 @@
-import { IndianRupee, Store, CalendarCheck2, Activity, MoreHorizontal, Wallet } from 'lucide-react';
+import {
+  IndianRupee,
+  Store,
+  CalendarCheck2,
+  Activity,
+  MoreHorizontal,
+  Users,
+  Clock,
+  ShieldAlert,
+} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DashboardSection } from './DashboardSection';
 import { StatCard } from './StatCard';
 import { RecentItem } from './RecentItem';
+import Link from 'next/link';
 
 export function SuperAdminDashboard() {
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
       {/* Metrics Section */}
       <DashboardSection title="Performance Overview">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <StatCard
             index={1}
-            title="Total Revenue"
-            value="₹45,231"
-            icon={IndianRupee}
-            description="Total earnings"
+            title="Total Users"
+            value="12,543"
+            icon={Users}
+            description="All time registered"
             trend="up"
-            color="emerald"
+            color="blue"
           />
           <StatCard
             index={2}
-            title="Active Vendors"
-            value="2,350"
+            title="Total Vendors"
+            value="845"
             icon={Store}
-            description="+180 this month"
+            description="All time registered"
             trend="up"
             color="violet"
           />
           <StatCard
             index={3}
             title="Total Bookings"
-            value="12,234"
+            value="45,231"
             icon={CalendarCheck2}
-            description="+19% vs last month"
+            description="All time bookings"
             trend="up"
-            color="blue"
+            color="emerald"
           />
           <StatCard
             index={4}
-            title="Active Users"
-            value="892"
+            title="Today's Bookings"
+            value="142"
             icon={Activity}
-            description="Currently online"
+            description="Bookings today"
+            trend="up"
             color="amber"
           />
+          <StatCard
+            index={5}
+            title="Today's Revenue"
+            value="₹1,420"
+            icon={IndianRupee}
+            description="Sum of ₹10 advances"
+            trend="up"
+            color="emerald"
+          />
+          <Link href="/dashboard/vendors/requests" className="block w-full">
+            <StatCard
+              index={6}
+              title="Pending Verifications"
+              value="12"
+              icon={Clock}
+              description="Vendors awaiting approval"
+              color="rose"
+            />
+          </Link>
         </div>
       </DashboardSection>
 
@@ -72,13 +102,13 @@ export function SuperAdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* Recent Transactions List */}
+        {/* Recent Issues List */}
         <Card className="col-span-3 shadow-sm border-border/60 bg-gradient-to-br from-card to-card/50 backdrop-blur-sm">
           <CardHeader className="pb-2 border-b border-border/40">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base font-semibold">Recent Transactions</CardTitle>
-              <div className="p-1.5 rounded-full bg-primary/10">
-                <Wallet className="h-4 w-4 text-primary" />
+              <CardTitle className="text-base font-semibold">Recent Issues</CardTitle>
+              <div className="p-1.5 rounded-full bg-rose-500/10">
+                <ShieldAlert className="h-4 w-4 text-rose-500" />
               </div>
             </div>
           </CardHeader>
@@ -87,36 +117,36 @@ export function SuperAdminDashboard() {
               index={1}
               initials="JD"
               primary="John Doe"
-              secondary="booking@felbo.com"
-              tertiary="+₹120.00"
+              secondary="Shop closed down unexpectedly"
+              tertiary="PENDING"
             />
             <RecentItem
               index={2}
               initials="AS"
               primary="Alice Smith"
-              secondary="vendor_reg@gmail.com"
-              tertiary="+₹499.00"
+              secondary="Barber unavailable at chosen time"
+              tertiary="RESOLVED"
             />
             <RecentItem
               index={3}
               initials="RK"
               primary="Rahul K."
-              secondary="booking@yahoo.com"
-              tertiary="+₹120.00"
+              secondary="App crashed during payment"
+              tertiary="INVESTIGATING"
             />
             <RecentItem
               index={4}
               initials="MJ"
               primary="Mary Jane"
-              secondary="service@outlook.com"
-              tertiary="+₹350.00"
+              secondary="Long waiting time at shop"
+              tertiary="PENDING"
             />
             <RecentItem
               index={5}
               initials="TG"
               primary="Tom Green"
-              secondary="tommy@gmail.com"
-              tertiary="+₹120.00"
+              secondary="Location issue with map display"
+              tertiary="RESOLVED"
             />
           </CardContent>
         </Card>
