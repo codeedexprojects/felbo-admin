@@ -7,6 +7,7 @@ export interface AssociationVendorListFilter {
   limit?: number;
   status?: string;
   verificationStatus?: string;
+  search?: string;
 }
 
 export interface AssociationVendorListResponse {

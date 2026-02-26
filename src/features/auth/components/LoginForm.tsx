@@ -11,6 +11,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
+function getLoginError(error: unknown): string {
+  const msg = (error instanceof Error ? error.message : '') || '';
+  if (!msg || msg.toLowerCase().includes('network')) {
+    return 'Unable to reach the server. Please check your connection or try again later.';
+  }
+  if (msg.toLowerCase().includes('failed with status code 5')) {
+    return 'Something went wrong on our end. Please try again in a moment.';
+  }
+  if (msg.toLowerCase().includes('timeout')) {
+    return 'The request timed out. Please try again.';
+  }
+
+  return msg || 'Something went wrong. Please try again.';
+}
+
 export const LoginForm = () => {
   const {
     register,
@@ -39,10 +54,8 @@ export const LoginForm = () => {
           {isError && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription>
-                {error instanceof Error ? error.message : 'Invalid credentials. Please try again.'}
-              </AlertDescription>
+              <AlertTitle>Login failed</AlertTitle>
+              <AlertDescription>{getLoginError(error)}</AlertDescription>
             </Alert>
           )}
 
