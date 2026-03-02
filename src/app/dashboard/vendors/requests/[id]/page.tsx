@@ -39,6 +39,13 @@ import { cn } from '@/lib/utils';
 
 /* ─── Helpers ─────────────────────────────────────────────────── */
 
+function safeFormat(value: string | null | undefined, fmt: string): string {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return '—';
+  return format(d, fmt);
+}
+
 function Section({
   title,
   icon: Icon,
@@ -216,7 +223,7 @@ export default function VendorRequestDetailPage() {
                     ? 'Association Member'
                     : 'Independent Vendor'}
                   {' · '}
-                  Registered {format(new Date(data.registrationDate), 'dd MMM yyyy')}
+                  Registered {safeFormat(data.registrationDate, 'dd MMM yyyy')}
                 </p>
               </div>
 
@@ -363,7 +370,7 @@ export default function VendorRequestDetailPage() {
                   />
                   <Field
                     label="Registered On"
-                    value={format(new Date(data.registrationDate), 'dd MMM yyyy, hh:mm a')}
+                    value={safeFormat(data.registrationDate, 'dd MMM yyyy, hh:mm a')}
                   />
                 </div>
               </Section>
@@ -482,10 +489,7 @@ export default function VendorRequestDetailPage() {
                       />
                       <Field
                         label="Paid On"
-                        value={format(
-                          new Date(data.registrationPayment.paidAt),
-                          'dd MMM yyyy, hh:mm a'
-                        )}
+                        value={safeFormat(data.registrationPayment.paidAt, 'dd MMM yyyy, hh:mm a')}
                       />
                     </div>
                   ) : (
