@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useCreateAd } from '@/features/advertisements/hooks';
 import { CreateAdInput } from '@/features/advertisements/types';
+import { BannerImageUploader } from '@/features/advertisements/BannerImageUploader';
 import apiClient from '@/lib/axios';
 import { ApiResponse } from '@/types/api';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -30,7 +31,7 @@ const adSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100),
   subtitle: z.string().min(1, 'Subtitle is required').max(200),
   description: z.string().min(1, 'Description is required').max(1000),
-  bannerImage: z.string().min(1, 'Banner image URL is required'),
+  bannerImage: z.string().min(1, 'Banner image is required'),
   priority: z.coerce.number().int().min(0).optional(),
 });
 
@@ -63,7 +64,7 @@ function ShopSearchField({
     setIsSearching(true);
     apiClient
       .get<ApiResponse<{ shops: ShopSearchResult[] }>>(
-        `/shops/search?query=${encodeURIComponent(debouncedQuery)}&limit=8`
+        `/public/shops/search?query=${encodeURIComponent(debouncedQuery)}&limit=8`
       )
       .then((r) => {
         if (r.data.success) {
@@ -303,32 +304,18 @@ export default function NewAdvertisementPage() {
           </Field>
 
           <Field
-            label="Banner Image URL"
+            label="Banner Image"
             required
-            hint="Paste a direct link to the banner image (JPG, PNG, WebP)."
+            hint="Upload a JPG, PNG, or WebP image (max 10 MB)."
             error={errors.bannerImage?.message}
           >
-            <Input
-              {...register('bannerImage')}
-              placeholder="https://your-cdn.com/banner.jpg"
-              className="h-10 text-sm font-mono"
+            <BannerImageUploader
+              value={watchedBannerImage}
+              onChange={(key) => setValue('bannerImage', key, { shouldValidate: true })}
+              onClear={() => setValue('bannerImage', '', { shouldValidate: true })}
+              error={errors.bannerImage?.message}
             />
           </Field>
-
-          {/* Live banner preview */}
-          {watchedBannerImage && (
-            <div className="rounded-xl overflow-hidden border border-border/60 bg-muted h-48">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={watchedBannerImage}
-                alt="Banner preview"
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
-              />
-            </div>
-          )}
 
           <Field
             label="Priority"
