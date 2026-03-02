@@ -44,6 +44,8 @@ import { PageHeader } from '@/components/layout/PageHeader';
 
 import { useAds, useUpdateAd, useDeleteAd } from '@/features/advertisements/hooks';
 import { Ad, UpdateAdInput } from '@/features/advertisements/types';
+import { BannerImageUploader } from '@/features/advertisements/BannerImageUploader';
+import { buildS3Url } from '@/features/advertisements/upload';
 import apiClient from '@/lib/axios';
 import { ApiResponse } from '@/types/api';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -62,7 +64,7 @@ const editAdSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100),
   subtitle: z.string().min(1, 'Subtitle is required').max(200),
   description: z.string().min(1, 'Description is required').max(1000),
-  bannerImage: z.string().min(1, 'Banner image URL is required'),
+  bannerImage: z.string().min(1, 'Banner image is required'),
   shopId: z
     .string()
     .regex(/^[0-9a-fA-F]{24}$/, 'Please select a shop from the search results above'),
@@ -105,7 +107,7 @@ function AdCard({
         {ad.bannerImage ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={ad.bannerImage}
+            src={buildS3Url(ad.bannerImage)}
             alt={ad.title}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             onError={(e) => {
@@ -166,7 +168,7 @@ function AdCard({
             {format(new Date(ad.createdAt), 'dd MMM yyyy')}
           </span>
           <a
-            href={ad.bannerImage}
+            href={buildS3Url(ad.bannerImage)}
             target="_blank"
             rel="noreferrer"
             className="text-[10px] text-primary/70 hover:text-primary flex items-center gap-0.5 transition-colors"
@@ -178,8 +180,6 @@ function AdCard({
     </div>
   );
 }
-
-// ── Shop Search Field (for edit modal) ───────────────────────────────────────
 
 function ShopSearchField({
   value,
@@ -222,7 +222,7 @@ function ShopSearchField({
     updateDropdownPosition();
     apiClient
       .get<ApiResponse<{ shops: ShopSearchResult[] }>>(
-        `/shops/search?query=${encodeURIComponent(debouncedQuery)}&limit=8`
+        `/public/shops/search?query=${encodeURIComponent(debouncedQuery)}&limit=8`
       )
       .then((r) => {
         if (r.data.success) {
@@ -326,8 +326,6 @@ function ShopSearchField({
   );
 }
 
-// ── Edit Modal ────────────────────────────────────────────────────────────────
-
 function EditAdModal({ open, onClose, ad }: { open: boolean; onClose: () => void; ad: Ad | null }) {
   const updateAd = useUpdateAd(ad?.id || '');
 
@@ -418,15 +416,13 @@ function EditAdModal({ open, onClose, ad }: { open: boolean; onClose: () => void
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Banner Image URL</label>
-            <Input
-              {...register('bannerImage')}
-              placeholder="https://..."
-              className="h-9 text-sm font-mono"
+            <label className="text-xs font-medium text-muted-foreground">Banner Image</label>
+            <BannerImageUploader
+              value={watch('bannerImage')}
+              onChange={(key) => setValue('bannerImage', key, { shouldValidate: true })}
+              onClear={() => setValue('bannerImage', '', { shouldValidate: true })}
+              error={errors.bannerImage?.message}
             />
-            {errors.bannerImage && (
-              <p className="text-xs text-red-500">{errors.bannerImage.message}</p>
-            )}
           </div>
 
           <div className="space-y-1.5">
@@ -460,8 +456,6 @@ function EditAdModal({ open, onClose, ad }: { open: boolean; onClose: () => void
   );
 }
 
-// ── Main Page ─────────────────────────────────────────────────────────────────
-
 export default function AdvertisementsPage() {
   const [page, setPage] = useState(1);
   const limit = 12;
@@ -492,7 +486,6 @@ export default function AdvertisementsPage() {
     });
   };
 
-  // ── Derived pagination values ────────────────────────────────────────────
   const totalPages = data?.totalPages ?? 0;
   const total = data?.total ?? 0;
   const rangeStart = total === 0 ? 0 : (page - 1) * limit + 1;
