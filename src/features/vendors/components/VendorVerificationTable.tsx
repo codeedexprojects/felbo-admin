@@ -1,6 +1,6 @@
 'use client';
 
-import * as React from 'react';
+import React, { useState, useEffect } from 'react';
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { Search, Users, CheckCircle2, Clock, Ban } from 'lucide-react';
 
@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/table';
 
 import { useVerificationRequests } from '@/features/vendors/hooks';
-import { verificationColumns } from './VerificationColumns'; // Specialized columns
+import { verificationColumns } from './VerificationColumns';
 import { useMounted } from '@/hooks/use-mounted';
 import { useDebounce } from '@/hooks/useDebounce';
 import { VerificationRequestsFilter } from '@/features/vendors/types';
@@ -36,21 +36,21 @@ function SkeletonRow({ cols }: { cols: number }) {
 }
 
 export function VendorVerificationTable() {
-  const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 });
-  const [searchValue, setSearchValue] = React.useState('');
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+  const [searchValue, setSearchValue] = useState('');
   const debouncedSearch = useDebounce(searchValue, 500);
 
   // Always fetches PENDING — filter is baked into the dedicated endpoint
-  const [filter, setFilter] = React.useState<VerificationRequestsFilter>({
+  const [filter, setFilter] = useState<VerificationRequestsFilter>({
     page: 1,
     limit: 10,
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     setFilter((prev) => ({ ...prev, page: pagination.pageIndex + 1, limit: pagination.pageSize }));
   }, [pagination]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setFilter((prev) => ({ ...prev, search: debouncedSearch || undefined, page: 1 }));
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   }, [debouncedSearch]);
@@ -58,6 +58,7 @@ export function VendorVerificationTable() {
   const { data, isLoading, isError } = useVerificationRequests(filter);
   const mounted = useMounted();
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: data?.vendors || [],
     columns: verificationColumns,

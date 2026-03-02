@@ -9,7 +9,7 @@ export const getAds = async (filters: ListAdsFilter): Promise<ListAdsResponse> =
   });
 
   const response = await apiClient.get<ApiResponse<ListAdsResponse>>(
-    `/advertisements?${params.toString()}`
+    `/admin/advertisements?${params.toString()}`
   );
 
   if (!response.data.success) {
@@ -20,7 +20,7 @@ export const getAds = async (filters: ListAdsFilter): Promise<ListAdsResponse> =
 };
 
 export const getAdById = async (id: string): Promise<Ad> => {
-  const response = await apiClient.get<ApiResponse<Ad>>(`/advertisements/${id}`);
+  const response = await apiClient.get<ApiResponse<Ad>>(`/admin/advertisements/${id}`);
 
   if (!response.data.success) {
     throw new Error(response.data.error?.message || 'Failed to fetch advertisement');
@@ -30,7 +30,7 @@ export const getAdById = async (id: string): Promise<Ad> => {
 };
 
 export const createAd = async (input: CreateAdInput): Promise<Ad> => {
-  const response = await apiClient.post<ApiResponse<Ad>>('/advertisements', input);
+  const response = await apiClient.post<ApiResponse<Ad>>('/admin/advertisements', input);
 
   if (!response.data.success) {
     throw new Error(response.data.error?.message || 'Failed to create advertisement');
@@ -40,7 +40,7 @@ export const createAd = async (input: CreateAdInput): Promise<Ad> => {
 };
 
 export const updateAd = async (id: string, input: UpdateAdInput): Promise<Ad> => {
-  const response = await apiClient.put<ApiResponse<Ad>>(`/advertisements/${id}`, input);
+  const response = await apiClient.put<ApiResponse<Ad>>(`/admin/advertisements/${id}`, input);
 
   if (!response.data.success) {
     throw new Error(response.data.error?.message || 'Failed to update advertisement');
@@ -50,7 +50,7 @@ export const updateAd = async (id: string, input: UpdateAdInput): Promise<Ad> =>
 };
 
 export const deleteAd = async (id: string): Promise<void> => {
-  const response = await apiClient.delete<ApiResponse<void>>(`/advertisements/${id}`);
+  const response = await apiClient.delete<ApiResponse<void>>(`/admin/advertisements/${id}`);
 
   if (!response.data.success) {
     throw new Error(response.data.error?.message || 'Failed to delete advertisement');
