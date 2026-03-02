@@ -12,7 +12,7 @@ export const getIssues = async (
   if (filters.type) params.append('type', filters.type);
 
   const response = await apiClient.get<ApiResponse<IssueListResponse>>(
-    `/issues?${params.toString()}`
+    `/admin/issues?${params.toString()}`
   );
 
   if (!response.data.success) {
@@ -23,7 +23,7 @@ export const getIssues = async (
 };
 
 export const getIssueById = async (id: string): Promise<IssueDetail> => {
-  const response = await apiClient.get<ApiResponse<IssueDetail>>(`/issues/${id}`);
+  const response = await apiClient.get<ApiResponse<IssueDetail>>(`/admin/issues/${id}`);
 
   if (!response.data.success) {
     throw new Error(response.data.error?.message || 'Failed to fetch issue');
@@ -37,7 +37,7 @@ export const updateIssueStatus = async (
   status: 'RESOLVED' | 'REJECTED',
   reason: string
 ): Promise<void> => {
-  const response = await apiClient.patch<ApiResponse<void>>(`/issues/${id}/status`, {
+  const response = await apiClient.patch<ApiResponse<void>>(`/admin/issues/${id}/status`, {
     status,
     reason,
   });
@@ -49,7 +49,7 @@ export const updateIssueStatus = async (
 
 export const flagVendorForIssue = async (id: string): Promise<{ alreadyFlagged: boolean }> => {
   const response = await apiClient.post<ApiResponse<{ alreadyFlagged: boolean }>>(
-    `/issues/${id}/flag-vendor`
+    `/admin/issues/${id}/flag-vendor`
   );
 
   if (!response.data.success) {
@@ -60,7 +60,7 @@ export const flagVendorForIssue = async (id: string): Promise<{ alreadyFlagged: 
 };
 
 export const processRefundForIssue = async (id: string): Promise<void> => {
-  const response = await apiClient.post<ApiResponse<void>>(`/issues/${id}/refund`);
+  const response = await apiClient.post<ApiResponse<void>>(`/admin/issues/${id}/refund`);
 
   if (!response.data.success) {
     throw new Error(response.data.error?.message || 'Failed to process refund');

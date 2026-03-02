@@ -1,6 +1,6 @@
 'use client';
 
-import * as React from 'react';
+import React, { useState, useCallback, useRef, useEffect, CSSProperties } from 'react';
 import { format } from 'date-fns';
 import {
   Plus,
@@ -31,7 +31,6 @@ import {
 } from '@/components/ui/dialog';
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -191,17 +190,17 @@ function ShopSearchField({
   onChange: (shopId: string, shopName: string) => void;
   error?: string;
 }) {
-  const [query, setQuery] = React.useState('');
-  const [selectedName, setSelectedName] = React.useState('');
-  const [open, setOpen] = React.useState(false);
-  const [results, setResults] = React.useState<ShopSearchResult[]>([]);
-  const [isSearching, setIsSearching] = React.useState(false);
+  const [query, setQuery] = useState('');
+  const [selectedName, setSelectedName] = useState('');
+  const [open, setOpen] = useState(false);
+  const [results, setResults] = useState<ShopSearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const debouncedQuery = useDebounce(query, 350);
-  const containerRef = React.useRef<HTMLDivElement>(null);
-  const inputRef = React.useRef<HTMLInputElement>(null);
-  const [dropdownStyle, setDropdownStyle] = React.useState<React.CSSProperties>({});
+  const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [dropdownStyle, setDropdownStyle] = useState<CSSProperties>({});
 
-  const updateDropdownPosition = React.useCallback(() => {
+  const updateDropdownPosition = useCallback(() => {
     if (!inputRef.current) return;
     const rect = inputRef.current.getBoundingClientRect();
     setDropdownStyle({
@@ -213,8 +212,9 @@ function ShopSearchField({
     });
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!debouncedQuery.trim()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setResults([]);
       return;
     }
@@ -234,7 +234,7 @@ function ShopSearchField({
       .finally(() => setIsSearching(false));
   }, [debouncedQuery, updateDropdownPosition]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
     };
@@ -342,9 +342,10 @@ function EditAdModal({ open, onClose, ad }: { open: boolean; onClose: () => void
     resolver: zodResolver(editAdSchema) as import('react-hook-form').Resolver<EditAdFormValues>,
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const watchedShopId = watch('shopId');
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (ad) {
       reset({
         title: ad.title,
@@ -462,17 +463,17 @@ function EditAdModal({ open, onClose, ad }: { open: boolean; onClose: () => void
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function AdvertisementsPage() {
-  const [page, setPage] = React.useState(1);
+  const [page, setPage] = useState(1);
   const limit = 12;
 
   const { data, isLoading, isError } = useAds({ page, limit });
   const deleteAdMutation = useDeleteAd();
 
-  const [editModal, setEditModal] = React.useState<{ open: boolean; ad: Ad | null }>({
+  const [editModal, setEditModal] = useState<{ open: boolean; ad: Ad | null }>({
     open: false,
     ad: null,
   });
-  const [deleteModal, setDeleteModal] = React.useState<{ open: boolean; ad: Ad | null }>({
+  const [deleteModal, setDeleteModal] = useState<{ open: boolean; ad: Ad | null }>({
     open: false,
     ad: null,
   });

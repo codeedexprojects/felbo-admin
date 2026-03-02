@@ -1,6 +1,6 @@
 'use client';
 
-import * as React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -45,16 +45,17 @@ function ShopSearchField({
   onChange: (shopId: string, shopName: string) => void;
   error?: string;
 }) {
-  const [query, setQuery] = React.useState('');
-  const [selectedName, setSelectedName] = React.useState('');
-  const [open, setOpen] = React.useState(false);
-  const [results, setResults] = React.useState<ShopSearchResult[]>([]);
-  const [isSearching, setIsSearching] = React.useState(false);
+  const [query, setQuery] = useState('');
+  const [selectedName, setSelectedName] = useState('');
+  const [open, setOpen] = useState(false);
+  const [results, setResults] = useState<ShopSearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const debouncedQuery = useDebounce(query, 350);
-  const containerRef = React.useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!debouncedQuery.trim()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setResults([]);
       setOpen(false);
       return;
@@ -74,7 +75,7 @@ function ShopSearchField({
       .finally(() => setIsSearching(false));
   }, [debouncedQuery]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
@@ -216,6 +217,7 @@ export default function NewAdvertisementPage() {
     defaultValues: { priority: 0 },
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const watchedShopId = watch('shopId');
   const watchedBannerImage = watch('bannerImage');
 

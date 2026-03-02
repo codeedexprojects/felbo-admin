@@ -47,8 +47,8 @@ apiClient.interceptors.response.use(
 
     const is401 = error.response?.status === 401;
     const alreadyRetried = originalRequest._retry;
-    const isRefreshEndpoint = originalRequest.url === '/admin/refresh-token';
-    const isLoginEndpoint = originalRequest.url === '/admin/login';
+    const isRefreshEndpoint = originalRequest.url === '/admin/auth/refresh-token';
+    const isLoginEndpoint = originalRequest.url === '/admin/auth/login';
 
     if (is401 && !alreadyRetried && !isRefreshEndpoint && !isLoginEndpoint) {
       if (isRefreshing) {
@@ -69,7 +69,9 @@ apiClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const response = await apiClient.post<ApiResponse<LoginResponse>>('/admin/refresh-token');
+        const response = await apiClient.post<ApiResponse<LoginResponse>>(
+          '/admin/auth/refresh-token'
+        );
 
         if (response.data.success && response.data.data) {
           const { token, admin } = response.data.data;
