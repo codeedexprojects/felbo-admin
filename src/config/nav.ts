@@ -7,7 +7,6 @@ import {
   CreditCard,
   Ban,
   Settings,
-  ShieldCheck,
   Building2,
   Megaphone,
 } from 'lucide-react';
@@ -77,12 +76,6 @@ export const navItems: NavItem[] = [
     title: 'System Config',
     href: '/dashboard/system-config',
     icon: Settings,
-    roles: ['SUPER_ADMIN'],
-  },
-  {
-    title: 'Admins',
-    href: '/dashboard/admin-management',
-    icon: ShieldCheck,
     roles: ['SUPER_ADMIN'],
   },
 ];

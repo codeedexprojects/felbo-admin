@@ -2,7 +2,10 @@
 
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
+import Link from 'next/link';
+import { Eye } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { BookingListItem } from '../types';
 
 export const createBookingColumns = (): ColumnDef<BookingListItem>[] => [
@@ -73,5 +76,17 @@ export const createBookingColumns = (): ColumnDef<BookingListItem>[] => [
         </Badge>
       );
     },
+  },
+  {
+    id: 'actions',
+    header: 'Actions',
+    cell: ({ row }) => (
+      <Button variant="ghost" size="sm" asChild>
+        <Link href={`/dashboard/bookings/${row.original.id}`} className="gap-2">
+          <Eye className="h-4 w-4" />
+          View
+        </Link>
+      </Button>
+    ),
   },
 ];
