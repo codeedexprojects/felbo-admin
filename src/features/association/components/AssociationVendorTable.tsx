@@ -1,6 +1,6 @@
 'use client';
 
-import * as React from 'react';
+import { useEffect, useState } from 'react';
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { Users, Ban, CheckCircle2, Clock, Search } from 'lucide-react';
 
@@ -40,17 +40,17 @@ function SkeletonRow({ cols }: { cols: number }) {
 }
 
 export function AssociationVendorTable() {
-  const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 });
-  const [searchValue, setSearchValue] = React.useState('');
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+  const [searchValue, setSearchValue] = useState('');
   const debouncedSearch = useDebounce(searchValue, 500);
-  const [filter, setFilter] = React.useState<AssociationVendorListFilter>({ page: 1, limit: 10 });
+  const [filter, setFilter] = useState<AssociationVendorListFilter>({ page: 1, limit: 10 });
   const mounted = useMounted();
 
-  React.useEffect(() => {
+  useEffect(() => {
     setFilter((prev) => ({ ...prev, page: pagination.pageIndex + 1, limit: pagination.pageSize }));
   }, [pagination]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setFilter((prev) => ({ ...prev, search: debouncedSearch || undefined, page: 1 }));
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   }, [debouncedSearch]);

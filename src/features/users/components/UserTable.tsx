@@ -1,6 +1,6 @@
 'use client';
 
-import * as React from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { Search, Users, CheckCircle2, Ban } from 'lucide-react';
 
@@ -50,22 +50,22 @@ function SkeletonRow({ cols }: { cols: number }) {
 }
 
 export function UserTable() {
-  const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 });
-  const [searchValue, setSearchValue] = React.useState('');
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+  const [searchValue, setSearchValue] = useState('');
   const debouncedSearch = useDebounce(searchValue, 500);
 
-  const [filter, setFilter] = React.useState<ListUsersFilter>({ page: 1, limit: 10 });
+  const [filter, setFilter] = useState<ListUsersFilter>({ page: 1, limit: 10 });
 
-  const [blockUserModal, setBlockUserModal] = React.useState<{
+  const [blockUserModal, setBlockUserModal] = useState<{
     isOpen: boolean;
     user: UserListItem | null;
   }>({
     isOpen: false,
     user: null,
   });
-  const [blockReason, setBlockReason] = React.useState('');
+  const [blockReason, setBlockReason] = useState('');
 
-  const [unblockUserModal, setUnblockUserModal] = React.useState<{
+  const [unblockUserModal, setUnblockUserModal] = useState<{
     isOpen: boolean;
     user: UserListItem | null;
   }>({
@@ -76,11 +76,11 @@ export function UserTable() {
   const blockMutation = useBlockUser(blockUserModal.user?.id || '');
   const unblockMutation = useUnblockUser(unblockUserModal.user?.id || '');
 
-  React.useEffect(() => {
+  useEffect(() => {
     setFilter((prev) => ({ ...prev, page: pagination.pageIndex + 1, limit: pagination.pageSize }));
   }, [pagination]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setFilter((prev) => ({ ...prev, search: debouncedSearch || undefined, page: 1 }));
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   }, [debouncedSearch]);
@@ -107,7 +107,7 @@ export function UserTable() {
     });
   };
 
-  const columns = React.useMemo(
+  const columns = useMemo(
     () =>
       createUserColumns({
         onBlock: (user) => setBlockUserModal({ isOpen: true, user }),

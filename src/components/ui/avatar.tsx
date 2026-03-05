@@ -1,11 +1,11 @@
 'use client';
 
-import { forwardRef, ElementRef, ComponentPropsWithoutRef } from 'react';
+import { forwardRef, ComponentRef, ComponentPropsWithoutRef } from 'react';
 import { Root, Image, Fallback } from '@radix-ui/react-avatar';
 
 import { cn } from '@/lib/utils';
 
-const Avatar = forwardRef<ElementRef<typeof Root>, ComponentPropsWithoutRef<typeof Root>>(
+const Avatar = forwardRef<ComponentRef<typeof Root>, ComponentPropsWithoutRef<typeof Root>>(
   ({ className, ...props }, ref) => (
     <Root
       ref={ref}
@@ -16,7 +16,7 @@ const Avatar = forwardRef<ElementRef<typeof Root>, ComponentPropsWithoutRef<type
 );
 Avatar.displayName = Root.displayName;
 
-const AvatarImage = forwardRef<ElementRef<typeof Image>, ComponentPropsWithoutRef<typeof Image>>(
+const AvatarImage = forwardRef<ComponentRef<typeof Image>, ComponentPropsWithoutRef<typeof Image>>(
   ({ className, ...props }, ref) => (
     <Image ref={ref} className={cn('aspect-square h-full w-full', className)} {...props} />
   )
@@ -24,7 +24,7 @@ const AvatarImage = forwardRef<ElementRef<typeof Image>, ComponentPropsWithoutRe
 AvatarImage.displayName = Image.displayName;
 
 const AvatarFallback = forwardRef<
-  ElementRef<typeof Fallback>,
+  ComponentRef<typeof Fallback>,
   ComponentPropsWithoutRef<typeof Fallback>
 >(({ className, ...props }, ref) => (
   <Fallback

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { forwardRef, ElementRef, ComponentPropsWithoutRef, HTMLAttributes } from 'react';
+import React, { forwardRef, ComponentRef, ComponentPropsWithoutRef, HTMLAttributes } from 'react';
 import {
   Root,
   Trigger,
@@ -24,7 +24,7 @@ const DialogPortal = Portal;
 const DialogClose = Close;
 
 const DialogOverlay = forwardRef<
-  ElementRef<typeof Overlay>,
+  ComponentRef<typeof Overlay>,
   ComponentPropsWithoutRef<typeof Overlay>
 >(({ className, ...props }, ref) => (
   <Overlay
@@ -39,7 +39,7 @@ const DialogOverlay = forwardRef<
 DialogOverlay.displayName = Overlay.displayName;
 
 const DialogContent = forwardRef<
-  ElementRef<typeof Content>,
+  ComponentRef<typeof Content>,
   ComponentPropsWithoutRef<typeof Content>
 >(({ className, children, ...props }, ref) => (
   <DialogPortal>
@@ -75,7 +75,7 @@ const DialogFooter = ({ className, ...props }: HTMLAttributes<HTMLDivElement>) =
 );
 DialogFooter.displayName = 'DialogFooter';
 
-const DialogTitle = forwardRef<ElementRef<typeof Title>, ComponentPropsWithoutRef<typeof Title>>(
+const DialogTitle = forwardRef<ComponentRef<typeof Title>, ComponentPropsWithoutRef<typeof Title>>(
   ({ className, ...props }, ref) => (
     <Title
       ref={ref}
@@ -87,7 +87,7 @@ const DialogTitle = forwardRef<ElementRef<typeof Title>, ComponentPropsWithoutRe
 DialogTitle.displayName = Title.displayName;
 
 const DialogDescription = forwardRef<
-  ElementRef<typeof Description>,
+  ComponentRef<typeof Description>,
   ComponentPropsWithoutRef<typeof Description>
 >(({ className, ...props }, ref) => (
   <Description ref={ref} className={cn('text-sm text-muted-foreground', className)} {...props} />
