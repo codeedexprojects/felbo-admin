@@ -48,3 +48,39 @@ export interface ListBookingsResponse {
   totalPages: number;
   counts: BookingStatusCounts;
 }
+
+export interface BookingService {
+  name: string;
+  price: number;
+  duration: number;
+  barberName: string;
+}
+
+export interface PaymentDetails {
+  method: string;
+  advanceAmount: number;
+  shopAmount: number;
+  totalAmount: number;
+  status: string;
+}
+
+export interface RefundDetails {
+  status: string;
+  amount: number;
+  reason?: string;
+  processedAt?: string;
+}
+
+export interface BookingDetail {
+  id: string;
+  bookingNumber: string;
+  user: BookingUser;
+  vendor: BookingVendor;
+  services: BookingService[];
+  status: 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
+  date: string;
+  time: string;
+  payment: PaymentDetails;
+  refund?: RefundDetails;
+  createdAt: string;
+}

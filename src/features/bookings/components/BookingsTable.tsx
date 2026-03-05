@@ -156,31 +156,31 @@ export function BookingsTable() {
 
       {/* Filter bar */}
       <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/60 bg-card px-4 py-3 shadow-sm">
-        <div className="relative flex-1 min-w-[180px] max-w-xs">
-          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search bookings..."
-            className="pl-8 h-8 text-sm border-border/60 bg-muted/30 focus-visible:bg-background"
+            className="pl-9 h-10 text-sm border-border/60 bg-muted/30 focus-visible:bg-background"
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
           />
         </div>
 
         <Select value={filter.status || 'ALL'} onValueChange={handleStatusChange}>
-          <SelectTrigger className="w-[140px] h-8 text-xs border-border/60 bg-muted/30">
+          <SelectTrigger className="w-[160px] h-10 text-sm border-border/60 bg-muted/30">
             <SelectValue placeholder="All Status" />
           </SelectTrigger>
           <SelectContent align="end">
-            <SelectItem value="ALL" className="text-xs">
+            <SelectItem value="ALL" className="text-sm">
               All Status
             </SelectItem>
-            <SelectItem value="CONFIRMED" className="text-xs">
+            <SelectItem value="CONFIRMED" className="text-sm">
               Confirmed
             </SelectItem>
-            <SelectItem value="COMPLETED" className="text-xs">
+            <SelectItem value="COMPLETED" className="text-sm">
               Completed
             </SelectItem>
-            <SelectItem value="CANCELLED" className="text-xs">
+            <SelectItem value="CANCELLED" className="text-sm">
               Cancelled
             </SelectItem>
           </SelectContent>
@@ -191,15 +191,15 @@ export function BookingsTable() {
           onValueChange={handleVendorChange}
           disabled={vendorsQuery.isLoading}
         >
-          <SelectTrigger className="w-[140px] h-8 text-xs border-border/60 bg-muted/30">
+          <SelectTrigger className="w-[160px] h-10 text-sm border-border/60 bg-muted/30">
             <SelectValue placeholder="All Vendors" />
           </SelectTrigger>
           <SelectContent align="end">
-            <SelectItem value="ALL" className="text-xs">
+            <SelectItem value="ALL" className="text-sm">
               All Vendors
             </SelectItem>
             {vendors.map((v) => (
-              <SelectItem key={v.id} value={v.id} className="text-xs">
+              <SelectItem key={v.id} value={v.id} className="text-sm">
                 {v.ownerName}
               </SelectItem>
             ))}
@@ -209,15 +209,15 @@ export function BookingsTable() {
         <div className="flex items-center gap-2">
           <Input
             type="date"
-            className="h-8 text-xs w-[130px] border-border/60 bg-muted/30"
+            className="h-10 text-sm w-[140px] border-border/60 bg-muted/30"
             value={filter.startDate || ''}
             onChange={(e) => handleDateChange(e, 'startDate')}
             title="Start Date"
           />
-          <span className="text-xs text-muted-foreground">-</span>
+          <span className="text-sm text-muted-foreground">-</span>
           <Input
             type="date"
-            className="h-8 text-xs w-[130px] border-border/60 bg-muted/30"
+            className="h-10 text-sm w-[140px] border-border/60 bg-muted/30"
             value={filter.endDate || ''}
             onChange={(e) => handleDateChange(e, 'endDate')}
             title="End Date"
