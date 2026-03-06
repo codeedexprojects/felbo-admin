@@ -1,6 +1,6 @@
 'use client';
 
-import React, { forwardRef, ElementRef, ComponentPropsWithoutRef } from 'react';
+import React, { forwardRef, ComponentRef, ComponentPropsWithoutRef } from 'react';
 import {
   Root,
   Trigger,
@@ -21,7 +21,7 @@ const AlertDialogTrigger = Trigger;
 const AlertDialogPortal = Portal;
 
 const AlertDialogOverlay = forwardRef<
-  ElementRef<typeof Overlay>,
+  ComponentRef<typeof Overlay>,
   ComponentPropsWithoutRef<typeof Overlay>
 >(({ className, ...props }, ref) => (
   <Overlay
@@ -36,7 +36,7 @@ const AlertDialogOverlay = forwardRef<
 AlertDialogOverlay.displayName = Overlay.displayName;
 
 const AlertDialogContent = forwardRef<
-  ElementRef<typeof Content>,
+  ComponentRef<typeof Content>,
   ComponentPropsWithoutRef<typeof Content>
 >(({ className, ...props }, ref) => (
   <AlertDialogPortal>
@@ -67,7 +67,7 @@ const AlertDialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDiv
 AlertDialogFooter.displayName = 'AlertDialogFooter';
 
 const AlertDialogTitle = forwardRef<
-  ElementRef<typeof Title>,
+  ComponentRef<typeof Title>,
   ComponentPropsWithoutRef<typeof Title>
 >(({ className, ...props }, ref) => (
   <Title ref={ref} className={cn('text-lg font-semibold', className)} {...props} />
@@ -75,7 +75,7 @@ const AlertDialogTitle = forwardRef<
 AlertDialogTitle.displayName = Title.displayName;
 
 const AlertDialogDescription = forwardRef<
-  ElementRef<typeof Description>,
+  ComponentRef<typeof Description>,
   ComponentPropsWithoutRef<typeof Description>
 >(({ className, ...props }, ref) => (
   <Description ref={ref} className={cn('text-sm text-muted-foreground', className)} {...props} />
@@ -83,7 +83,7 @@ const AlertDialogDescription = forwardRef<
 AlertDialogDescription.displayName = Description.displayName;
 
 const AlertDialogAction = forwardRef<
-  ElementRef<typeof Action>,
+  ComponentRef<typeof Action>,
   ComponentPropsWithoutRef<typeof Action>
 >(({ className, ...props }, ref) => (
   <Action ref={ref} className={cn(buttonVariants(), className)} {...props} />
@@ -91,7 +91,7 @@ const AlertDialogAction = forwardRef<
 AlertDialogAction.displayName = Action.displayName;
 
 const AlertDialogCancel = forwardRef<
-  ElementRef<typeof Cancel>,
+  ComponentRef<typeof Cancel>,
   ComponentPropsWithoutRef<typeof Cancel>
 >(({ className, ...props }, ref) => (
   <Cancel

@@ -1,6 +1,6 @@
 'use client';
 
-import * as React from 'react';
+import { useEffect, useState } from 'react';
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { AlertOctagon, Ban, CheckCircle2, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -37,10 +37,10 @@ function SkeletonRow({ cols }: { cols: number }) {
 }
 
 export function IssueTable() {
-  const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 });
-  const [filter, setFilter] = React.useState<IssueListFilter>({ page: 1, limit: 10 });
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+  const [filter, setFilter] = useState<IssueListFilter>({ page: 1, limit: 10 });
 
-  React.useEffect(() => {
+  useEffect(() => {
     setFilter((prev) => ({ ...prev, page: pagination.pageIndex + 1, limit: pagination.pageSize }));
   }, [pagination]);
 
