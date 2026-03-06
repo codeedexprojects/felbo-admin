@@ -6,6 +6,7 @@ export interface ListUsersFilter {
 }
 
 export interface UserListItem {
+  slNo: number;
   id: string;
   name: string;
   phone: string;

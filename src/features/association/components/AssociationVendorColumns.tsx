@@ -75,7 +75,26 @@ function ActionCell({ vendor }: { vendor: Vendor }) {
   );
 }
 
-export const associationVendorColumns: ColumnDef<Vendor>[] = [
+interface AssociationVendorColumnsProps {
+  pageIndex: number;
+  pageSize: number;
+  totalVendors: number;
+}
+
+export const createAssociationVendorColumns = ({
+  pageIndex,
+  pageSize,
+  totalVendors,
+}: AssociationVendorColumnsProps): ColumnDef<Vendor>[] => [
+  {
+    id: 'serialNumber',
+    header: 'Sl No',
+    cell: ({ row }) => (
+      <span className="text-xs font-medium text-muted-foreground">
+        {totalVendors - pageIndex * pageSize - row.index}
+      </span>
+    ),
+  },
   {
     accessorKey: 'ownerName',
     header: 'Owner Name',

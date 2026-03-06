@@ -6,6 +6,7 @@ import { Search, Users, CheckCircle2, Ban } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { TablePagination } from '@/components/ui/table-pagination';
 import {
   Table,
   TableBody,
@@ -113,6 +114,7 @@ export function UserTable() {
         onBlock: (user) => setBlockUserModal({ isOpen: true, user }),
         onUnblock: (user) => setUnblockUserModal({ isOpen: true, user }),
       }),
+
     []
   );
 
@@ -279,46 +281,20 @@ export function UserTable() {
             </TableBody>
           </Table>
         </div>
+      </div>
 
-        {/* Pagination Footer */}
-        <div className="flex items-center justify-between border-t border-border/40 bg-muted/20 px-4 py-3">
-          <div className="text-xs text-muted-foreground flex items-center gap-1.5">
-            Showing
-            <span className="font-medium text-foreground">
-              {data?.total === 0
-                ? 0
-                : table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}
-            </span>
-            to
-            <span className="font-medium text-foreground">
-              {Math.min(
-                (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
-                data?.total ?? 0
-              )}
-            </span>
-            of <span className="font-medium text-foreground">{data?.total ?? 0}</span> users
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 border-border/60"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 border-border/60"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
+      {/* Pagination */}
+      <div className="flex items-center justify-between px-1">
+        <p className="text-xs text-muted-foreground">
+          {(counts?.total ?? data?.total ?? 0) > 0
+            ? `${counts?.total ?? data?.total} users`
+            : 'No users'}
+        </p>
+        <TablePagination
+          pageIndex={pagination.pageIndex}
+          totalPages={data?.totalPages || 1}
+          onPageChange={(idx) => setPagination((prev) => ({ ...prev, pageIndex: idx }))}
+        />
       </div>
 
       {/* Block User Modal */}

@@ -80,7 +80,14 @@ function ActionCell({ vendor }: { vendor: VendorListItem }) {
 }
 
 // ─── Column definitions ───────────────────────────────────────────────────────
-export const columns: ColumnDef<VendorListItem>[] = [
+export const createVendorColumns = (): ColumnDef<VendorListItem>[] => [
+  {
+    id: 'serialNumber',
+    header: 'Sl No',
+    cell: ({ row }) => (
+      <span className="text-xs font-medium text-muted-foreground">{row.original.slNo}</span>
+    ),
+  },
   {
     accessorKey: 'ownerName',
     header: ({ column }) => (

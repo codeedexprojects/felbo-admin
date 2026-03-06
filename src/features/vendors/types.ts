@@ -39,6 +39,7 @@ export interface VendorStatusCounts {
 }
 
 export interface VendorListItem {
+  slNo: number;
   id: string;
   ownerName: string;
   phone: string;
@@ -78,6 +79,7 @@ export interface VerificationRequestsFilter {
 }
 
 export interface VerificationRequestItem {
+  slNo: number;
   id: string;
   shopName: string | null;
   ownerName: string;

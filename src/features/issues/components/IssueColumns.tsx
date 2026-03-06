@@ -32,6 +32,7 @@ function TypePill({ type }: { type: IssueType }) {
     BARBER_UNAVAILABLE: 'bg-purple-50 text-purple-700 ring-purple-200',
     SERVICE_NOT_PROVIDED: 'bg-orange-50 text-orange-700 ring-orange-200',
     QUALITY_ISSUE: 'bg-blue-50 text-blue-700 ring-blue-200',
+    EXCESSIVE_WAIT: 'bg-rose-50 text-rose-700 ring-rose-200',
     OTHER: 'bg-gray-100 text-gray-600 ring-gray-200',
   };
   return (
@@ -47,6 +48,13 @@ function TypePill({ type }: { type: IssueType }) {
 }
 
 export const issueColumns: ColumnDef<Issue>[] = [
+  {
+    id: 'serialNumber',
+    header: 'Sl No',
+    cell: ({ row }) => (
+      <span className="text-xs font-medium text-muted-foreground">{row.original.slNo}</span>
+    ),
+  },
   {
     accessorKey: 'type',
     header: 'Type',
