@@ -1,5 +1,6 @@
 'use client';
 
+import React, { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { LogOut } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
@@ -7,10 +8,22 @@ import { MobileSidebar } from './MobileSidebar';
 import { useMounted } from '@/hooks/use-mounted';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 export function Navbar() {
   const pathname = usePathname();
   const { admin, logout } = useAuthStore();
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
   const getPageTitle = (path: string) => {
     const segments = path.split('/').filter(Boolean);
@@ -54,16 +67,37 @@ export function Navbar() {
           </AvatarFallback>
         </Avatar>
 
-        {/* Logout — always visible outside the dropdown */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={logout}
-          className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors"
-          title="Log out"
-        >
-          <LogOut className="h-4 w-4" />
-        </Button>
+        {/* Logout — Confirmation Dialog */}
+        <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors"
+              title="Log out"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure you want to log out?</AlertDialogTitle>
+              <AlertDialogDescription>
+                You will be signed out of your account. You&apos;ll need to enter your credentials
+                again to access the admin dashboard.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => logout()}
+                className="bg-red-500 hover:bg-red-600 text-white"
+              >
+                Log Out
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </header>
   );
