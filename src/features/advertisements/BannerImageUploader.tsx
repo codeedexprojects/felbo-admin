@@ -36,8 +36,8 @@ export function BannerImageUploader({ value, onChange, onClear, error }: BannerI
       setIsUploading(true);
       setProgress(0);
       try {
-        const key = await uploadBannerImage(file, setProgress);
-        onChange(key);
+        const url = await uploadBannerImage(file, setProgress);
+        onChange(url);
       } catch (err) {
         setUploadError((err as Error)?.message || 'Upload failed. Please try again.');
       } finally {

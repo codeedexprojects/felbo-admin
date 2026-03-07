@@ -9,6 +9,7 @@ import {
   Settings,
   Building2,
   Megaphone,
+  Banknote,
 } from 'lucide-react';
 import { AdminRole } from '@/types/api';
 
@@ -62,9 +63,15 @@ export const navItems: NavItem[] = [
   },
   {
     title: 'Finance',
-    href: '/dashboard/finance',
+    href: '/dashboard/finance/revenue',
     icon: CreditCard,
-    roles: ['SUPER_ADMIN'],
+    roles: ['SUPER_ADMIN', 'ASSOCIATION_ADMIN'],
+  },
+  {
+    title: 'Payouts',
+    href: '/dashboard/finance/payouts',
+    icon: Banknote,
+    roles: ['SUPER_ADMIN', 'ASSOCIATION_ADMIN'],
   },
   {
     title: 'Cancellations',
