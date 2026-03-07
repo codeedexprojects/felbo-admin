@@ -19,9 +19,9 @@ import { ApiResponse } from '@/types/api';
 import { useDebounce } from '@/hooks/useDebounce';
 
 interface ShopSearchResult {
-  id: string;
-  name: string;
-  address: { area: string; city: string };
+  shopId: string;
+  shopName: string;
+  vendorName: string;
 }
 
 const adSchema = z.object({
@@ -64,7 +64,7 @@ function ShopSearchField({
     setIsSearching(true);
     apiClient
       .get<ApiResponse<{ shops: ShopSearchResult[] }>>(
-        `/public/shops/search?query=${encodeURIComponent(debouncedQuery)}&limit=8`
+        `/admin/shops/search?query=${encodeURIComponent(debouncedQuery)}&limit=8`
       )
       .then((r) => {
         if (r.data.success) {
@@ -87,11 +87,11 @@ function ShopSearchField({
   }, []);
 
   const handleSelect = (shop: ShopSearchResult) => {
-    setSelectedName(shop.name);
+    setSelectedName(shop.shopName);
     setQuery('');
     setResults([]);
     setOpen(false);
-    onChange(shop.id, shop.name);
+    onChange(shop.shopId, shop.shopName);
   };
 
   const handleClear = () => {
@@ -144,7 +144,7 @@ function ShopSearchField({
             <div className="absolute top-full left-0 z-50 mt-1.5 w-full rounded-xl border border-border bg-popover shadow-xl overflow-hidden">
               {results.map((shop) => (
                 <button
-                  key={shop.id}
+                  key={shop.shopId}
                   type="button"
                   onClick={() => handleSelect(shop)}
                   className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-muted/60 transition-colors border-b border-border/40 last:border-0"
@@ -153,10 +153,8 @@ function ShopSearchField({
                     <Store className="h-3.5 w-3.5 text-muted-foreground" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{shop.name}</p>
-                    <p className="text-[11px] text-muted-foreground truncate">
-                      {shop.address?.area}, {shop.address?.city}
-                    </p>
+                    <p className="text-sm font-medium text-foreground truncate">{shop.shopName}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{shop.vendorName}</p>
                   </div>
                 </button>
               ))}

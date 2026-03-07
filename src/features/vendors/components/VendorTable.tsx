@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { Search, Users, CheckCircle2, Clock, Ban } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { TablePagination } from '@/components/ui/table-pagination';
 import {
   Table,
   TableBody,
@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useVendors } from '@/features/vendors/hooks';
-import { columns } from './VendorColumns';
+import { createVendorColumns } from './VendorColumns';
 import { useMounted } from '@/hooks/use-mounted';
 import { useDebounce } from '@/hooks/useDebounce';
 import { VendorListFilter } from '../types';
@@ -59,6 +59,10 @@ export function VendorTable() {
   const { data, isLoading, isError } = useVendors(filter);
   const mounted = useMounted();
 
+  const counts = data?.counts;
+
+  const columns = useMemo(() => createVendorColumns(), []);
+
   const table = useReactTable({
     data: data?.vendors || [],
     columns,
@@ -72,7 +76,6 @@ export function VendorTable() {
   if (!mounted) return null;
 
   // Summary stats — sourced from server-side counts (accurate across all pages)
-  const counts = data?.counts;
 
   const stats = [
     {
@@ -252,29 +255,15 @@ export function VendorTable() {
       {/* Pagination */}
       <div className="flex items-center justify-between px-1">
         <p className="text-xs text-muted-foreground">
-          Page {pagination.pageIndex + 1} of {data?.totalPages || 1}
-          {(counts?.total ?? data?.total ?? 0) > 0 && ` · ${counts?.total ?? data?.total} vendors`}
+          {(counts?.total ?? data?.total ?? 0) > 0
+            ? `${counts?.total ?? data?.total} vendors`
+            : 'No vendors'}
         </p>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 text-xs border-border/60"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 text-xs border-border/60"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Next
-          </Button>
-        </div>
+        <TablePagination
+          pageIndex={pagination.pageIndex}
+          totalPages={data?.totalPages || 1}
+          onPageChange={(idx) => setPagination((prev) => ({ ...prev, pageIndex: idx }))}
+        />
       </div>
     </div>
   );

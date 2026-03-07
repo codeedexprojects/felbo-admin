@@ -24,7 +24,14 @@ function ViewCell({ item }: { item: VerificationRequestItem }) {
   );
 }
 
-export const verificationColumns: ColumnDef<VerificationRequestItem>[] = [
+export const createVerificationColumns = (): ColumnDef<VerificationRequestItem>[] => [
+  {
+    id: 'serialNumber',
+    header: 'Sl No',
+    cell: ({ row }) => (
+      <span className="text-xs font-medium text-muted-foreground">{row.original.slNo}</span>
+    ),
+  },
   {
     accessorKey: 'shopName',
     header: 'Shop Name',

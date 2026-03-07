@@ -26,6 +26,13 @@ export const createUserColumns = ({
   onUnblock,
 }: UserColumnsProps): ColumnDef<UserListItem>[] => [
   {
+    id: 'serialNumber',
+    header: 'Sl No',
+    cell: ({ row }) => (
+      <span className="text-xs font-medium text-muted-foreground">{row.original.slNo}</span>
+    ),
+  },
+  {
     accessorKey: 'name',
     header: 'Name',
     cell: ({ row }) => {

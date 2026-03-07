@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { Users, Ban, CheckCircle2, Clock, Search } from 'lucide-react';
 
@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useAssociationVendors } from '@/features/association/hooks';
-import { associationVendorColumns } from './AssociationVendorColumns';
+import { createAssociationVendorColumns } from './AssociationVendorColumns';
 import { useMounted } from '@/hooks/use-mounted';
 import { useDebounce } from '@/hooks/useDebounce';
 import { AssociationVendorListFilter } from '../types';
@@ -57,9 +57,22 @@ export function AssociationVendorTable() {
 
   const { data, isLoading, isError } = useAssociationVendors(filter);
 
+  const counts = data?.counts;
+  const totalVendors = counts?.total ?? data?.total ?? 0;
+
+  const columns = useMemo(
+    () =>
+      createAssociationVendorColumns({
+        pageIndex: pagination.pageIndex,
+        pageSize: pagination.pageSize,
+        totalVendors,
+      }),
+    [pagination.pageIndex, pagination.pageSize, totalVendors]
+  );
+
   const table = useReactTable({
     data: data?.vendors || [],
-    columns: associationVendorColumns,
+    columns,
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
     pageCount: data?.totalPages || -1,
@@ -69,7 +82,7 @@ export function AssociationVendorTable() {
 
   if (!mounted) return null;
 
-  const counts = data?.counts;
+  if (!mounted) return null;
 
   const stats = [
     {
@@ -205,12 +218,10 @@ export function AssociationVendorTable() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <SkeletonRow key={i} cols={associationVendorColumns.length} />
-              ))
+              Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} cols={columns.length} />)
             ) : isError ? (
               <TableRow>
-                <TableCell colSpan={associationVendorColumns.length} className="h-32 text-center">
+                <TableCell colSpan={columns.length} className="h-32 text-center">
                   <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <Ban className="h-8 w-8 opacity-30" />
                     <p className="text-sm">Failed to load vendors.</p>
@@ -232,7 +243,7 @@ export function AssociationVendorTable() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={associationVendorColumns.length} className="h-40 text-center">
+                <TableCell colSpan={columns.length} className="h-40 text-center">
                   <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <Users className="h-8 w-8 opacity-30" />
                     <p className="text-sm font-medium">No vendors found</p>

@@ -4,9 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { Search, Users, CheckCircle2, Clock, Ban } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
-
 import { Input } from '@/components/ui/input';
+import { TablePagination } from '@/components/ui/table-pagination';
 import {
   Table,
   TableBody,
@@ -17,7 +16,7 @@ import {
 } from '@/components/ui/table';
 
 import { useVerificationRequests } from '@/features/vendors/hooks';
-import { verificationColumns } from './VerificationColumns';
+import { createVerificationColumns } from './VerificationColumns';
 import { useMounted } from '@/hooks/use-mounted';
 import { useDebounce } from '@/hooks/useDebounce';
 import { VerificationRequestsFilter } from '@/features/vendors/types';
@@ -58,10 +57,14 @@ export function VendorVerificationTable() {
   const { data, isLoading, isError } = useVerificationRequests(filter);
   const mounted = useMounted();
 
+  const counts = data?.counts;
+
+  const columns = React.useMemo(() => createVerificationColumns(), []);
+
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: data?.vendors || [],
-    columns: verificationColumns,
+    columns,
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
     pageCount: data?.totalPages || -1,
@@ -72,7 +75,6 @@ export function VendorVerificationTable() {
   if (!mounted) return null;
 
   // Stats — sourced from server-side counts (accurate across all pages)
-  const counts = data?.counts;
 
   const stats = [
     {
@@ -159,12 +161,10 @@ export function VendorVerificationTable() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <SkeletonRow key={i} cols={verificationColumns.length} />
-              ))
+              Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} cols={columns.length} />)
             ) : isError ? (
               <TableRow>
-                <TableCell colSpan={verificationColumns.length} className="h-32 text-center">
+                <TableCell colSpan={columns.length} className="h-32 text-center">
                   <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <Ban className="h-8 w-8 opacity-30" />
                     <p className="text-sm">Failed to load requests.</p>
@@ -186,7 +186,7 @@ export function VendorVerificationTable() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={verificationColumns.length} className="h-40 text-center">
+                <TableCell colSpan={columns.length} className="h-40 text-center">
                   <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <CheckCircle2 className="h-8 w-8 opacity-30 text-emerald-500" />
                     <p className="text-sm font-medium">All caught up!</p>
@@ -202,30 +202,15 @@ export function VendorVerificationTable() {
       {/* Pagination */}
       <div className="flex items-center justify-between px-1">
         <p className="text-xs text-muted-foreground">
-          Page {pagination.pageIndex + 1} of {data?.totalPages || 1}
-          {(counts?.pending ?? data?.total ?? 0) > 0 &&
-            ` · ${counts?.pending ?? data?.total} requests`}
+          {(counts?.pending ?? data?.total ?? 0) > 0
+            ? `${counts?.pending ?? data?.total} requests`
+            : 'No requests'}
         </p>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 text-xs border-border/60"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 text-xs border-border/60"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Next
-          </Button>
-        </div>
+        <TablePagination
+          pageIndex={pagination.pageIndex}
+          totalPages={data?.totalPages || 1}
+          onPageChange={(idx) => setPagination((prev) => ({ ...prev, pageIndex: idx }))}
+        />
       </div>
     </div>
   );

@@ -5,11 +5,13 @@ export type IssueType =
   | 'BARBER_UNAVAILABLE'
   | 'SERVICE_NOT_PROVIDED'
   | 'QUALITY_ISSUE'
+  | 'EXCESSIVE_WAIT'
   | 'OTHER';
 
 export type RefundStatus = 'NONE' | 'PENDING' | 'ISSUED' | 'FAILED';
 
 export interface Issue {
+  slNo: number;
   id: string;
   bookingId: string;
   userId: string;
@@ -76,6 +78,7 @@ export const ISSUE_TYPE_LABELS: Record<IssueType, string> = {
   BARBER_UNAVAILABLE: 'Barber Unavailable',
   SERVICE_NOT_PROVIDED: 'Service Not Provided',
   QUALITY_ISSUE: 'Quality Issue',
+  EXCESSIVE_WAIT: 'Excessive Wait',
   OTHER: 'Other',
 };
 
