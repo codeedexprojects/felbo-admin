@@ -51,7 +51,7 @@ export async function uploadBannerImage(
 
   onProgress?.(100);
 
-  return key;
+  return buildS3Url(key);
 }
 
 export function buildS3Url(key: string): string {
