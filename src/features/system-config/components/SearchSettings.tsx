@@ -15,18 +15,18 @@ import { Button } from '@/components/ui/button';
 import { Save } from 'lucide-react';
 import { useConfigsByCategory, useUpdateConfig } from '../hooks';
 
-const CATEGORY = 'cancellation_settings';
-const KEYS = ['free_cancellation_window_minutes', 'late_cancellation_fee_percent'] as const;
+const CATEGORY = 'search_settings';
+const KEYS = ['shop_max_distance_meters', 'recommended_shops_max_distance_meters'] as const;
 
-type CancellationKey = (typeof KEYS)[number];
+type SearchKey = (typeof KEYS)[number];
 
-export function CancellationSettings() {
+export function SearchSettings() {
   const { data, isLoading } = useConfigsByCategory(CATEGORY);
   const { mutateAsync: updateConfig, isPending } = useUpdateConfig();
 
-  const [values, setValues] = useState<Record<CancellationKey, string>>({
-    free_cancellation_window_minutes: '30',
-    late_cancellation_fee_percent: '50',
+  const [values, setValues] = useState<Record<SearchKey, string>>({
+    shop_max_distance_meters: '10000',
+    recommended_shops_max_distance_meters: '20000',
   });
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -35,8 +35,8 @@ export function CancellationSettings() {
     if (data?.configs) {
       const next = { ...values };
       for (const config of data.configs) {
-        if (KEYS.includes(config.key as CancellationKey)) {
-          next[config.key as CancellationKey] = config.value;
+        if (KEYS.includes(config.key as SearchKey)) {
+          next[config.key as SearchKey] = config.value;
         }
       }
       setValues(next);
@@ -52,16 +52,16 @@ export function CancellationSettings() {
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to save cancellation settings');
+      setError(e instanceof Error ? e.message : 'Failed to save search settings');
     }
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg text-primary">Cancellation Settings</CardTitle>
+        <CardTitle className="text-lg text-primary">Search Settings</CardTitle>
         <CardDescription>
-          Define refund rules and penalties for user-initiated cancellations.
+          Configure search radius limits for nearby and recommended shop discovery.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -70,52 +70,47 @@ export function CancellationSettings() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-2">
-              <Label htmlFor="free_cancellation_window_minutes">
-                Free Cancellation Window (minutes)
-              </Label>
+              <Label htmlFor="shop_max_distance_meters">Shop Search Radius (meters)</Label>
               <Input
-                id="free_cancellation_window_minutes"
+                id="shop_max_distance_meters"
                 type="number"
-                value={values.free_cancellation_window_minutes}
+                value={values.shop_max_distance_meters}
                 onChange={(e) =>
-                  setValues((v) => ({ ...v, free_cancellation_window_minutes: e.target.value }))
+                  setValues((v) => ({ ...v, shop_max_distance_meters: e.target.value }))
                 }
               />
               <p className="text-[11px] text-muted-foreground">
-                Full refund period after booking is made.
+                Radius for nearby shop search results.
               </p>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="late_cancellation_fee_percent">Late Cancellation Fee (%)</Label>
-              <div className="relative">
-                <Input
-                  id="late_cancellation_fee_percent"
-                  type="number"
-                  value={values.late_cancellation_fee_percent}
-                  onChange={(e) =>
-                    setValues((v) => ({ ...v, late_cancellation_fee_percent: e.target.value }))
-                  }
-                  className="pr-8"
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground text-xs font-medium">
-                  %
-                </span>
-              </div>
+              <Label htmlFor="recommended_shops_max_distance_meters">
+                Recommended Shops Radius (meters)
+              </Label>
+              <Input
+                id="recommended_shops_max_distance_meters"
+                type="number"
+                value={values.recommended_shops_max_distance_meters}
+                onChange={(e) =>
+                  setValues((v) => ({
+                    ...v,
+                    recommended_shops_max_distance_meters: e.target.value,
+                  }))
+                }
+              />
               <p className="text-[11px] text-muted-foreground">
-                Percentage deducted if cancelled after the free window.
+                Radius for recommended shop discovery.
               </p>
             </div>
           </div>
         )}
         {error && <p className="text-sm text-destructive">{error}</p>}
-        {success && (
-          <p className="text-sm text-green-600">Cancellation settings saved successfully.</p>
-        )}
+        {success && <p className="text-sm text-green-600">Search settings saved successfully.</p>}
       </CardContent>
       <CardFooter className="border-t bg-muted/20 px-6 py-4 flex justify-end">
         <Button onClick={handleSave} disabled={isPending || isLoading} className="gap-2">
           <Save className="h-4 w-4" />
-          {isPending ? 'Saving...' : 'Save Cancellation Settings'}
+          {isPending ? 'Saving...' : 'Save Search Settings'}
         </Button>
       </CardFooter>
     </Card>
