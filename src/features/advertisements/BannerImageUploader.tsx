@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useCallback } from 'react';
 import { Upload, Loader2, X, ImageIcon, AlertCircle } from 'lucide-react';
-import { uploadBannerImage, buildS3Url } from '@/features/advertisements/upload';
+import { uploadBannerImage } from '@/features/advertisements/upload';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_SIZE_BYTES = 10 * 1024 * 1024;
@@ -70,7 +70,7 @@ export function BannerImageUploader({ value, onChange, onClear, error }: BannerI
 
   const handleDragLeave = () => setIsDragging(false);
 
-  const previewSrc = value ? buildS3Url(value) : null;
+  const previewSrc = value ?? null;
 
   return (
     <div className="space-y-2">

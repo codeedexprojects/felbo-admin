@@ -10,6 +10,7 @@ import {
   Building2,
   Megaphone,
   Banknote,
+  LayoutGrid,
 } from 'lucide-react';
 import { AdminRole } from '@/types/api';
 
@@ -78,6 +79,12 @@ export const navItems: NavItem[] = [
     href: '/dashboard/cancellation-management',
     icon: Ban,
     roles: ['SUPER_ADMIN', 'SUB_ADMIN'],
+  },
+  {
+    title: 'Categories',
+    href: '/dashboard/categories',
+    icon: LayoutGrid,
+    roles: ['SUPER_ADMIN'],
   },
   {
     title: 'System Config',

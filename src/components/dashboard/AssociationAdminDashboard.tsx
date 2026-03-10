@@ -1,9 +1,38 @@
-import { Users, TrendingUp, CalendarCheck2 } from 'lucide-react';
+import { Users, TrendingUp, CalendarCheck2, ShieldAlert } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DashboardSection } from './DashboardSection';
 import { StatCard } from './StatCard';
+import { useAssociationAdminDashboard } from '@/features/dashboard/hooks';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function AssociationAdminDashboard() {
+  const { data, isLoading, isError, error } = useAssociationAdminDashboard();
+
+  if (isLoading) {
+    return (
+      <div className="space-y-8 animate-in fade-in duration-700">
+        <DashboardSection title="Association Overview">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {[...Array(3)].map((_, i) => (
+              <Skeleton key={i} className="h-32 w-full rounded-xl" />
+            ))}
+          </div>
+        </DashboardSection>
+        <Skeleton className="h-[300px] w-full rounded-xl" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="p-8 text-center bg-rose-500/10 rounded-xl border border-rose-500/20 text-rose-500">
+        <ShieldAlert className="h-10 w-10 mx-auto mb-4" />
+        <h3 className="text-lg font-semibold">Failed to load association dashboard</h3>
+        <p className="text-sm opacity-80">{(error as Error).message}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
       <DashboardSection title="Association Overview">
@@ -11,7 +40,7 @@ export function AssociationAdminDashboard() {
           <StatCard
             index={1}
             title="Vendors"
-            value="124"
+            value={data?.myVendorsCount.toLocaleString() ?? '0'}
             icon={Users}
             description="Registered members"
             color="blue"
@@ -19,7 +48,7 @@ export function AssociationAdminDashboard() {
           <StatCard
             index={2}
             title="Share Pending"
-            value="₹12,400"
+            value={`₹${(data?.myVendorsRevenue ?? 0).toLocaleString()}`}
             icon={TrendingUp}
             description="Revenue share"
             color="emerald"
@@ -27,9 +56,9 @@ export function AssociationAdminDashboard() {
           <StatCard
             index={3}
             title="Member Bookings"
-            value="843"
+            value={data?.myVendorsBookings.total.toLocaleString() ?? '0'}
             icon={CalendarCheck2}
-            description="This month"
+            description="Total bookings"
             color="amber"
           />
         </div>
