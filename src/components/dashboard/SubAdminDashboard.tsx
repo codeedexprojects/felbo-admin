@@ -4,8 +4,40 @@ import { DashboardSection } from './DashboardSection';
 import { StatCard } from './StatCard';
 import { RecentItem } from './RecentItem';
 import Link from 'next/link';
+import { useSuperAdminDashboard } from '@/features/dashboard/hooks';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function SubAdminDashboard() {
+  const { data, isLoading, isError, error } = useSuperAdminDashboard();
+
+  if (isLoading) {
+    return (
+      <div className="space-y-8 animate-in fade-in duration-700">
+        <DashboardSection title="Operations Center">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[...Array(5)].map((_, i) => (
+              <Skeleton key={i} className="h-32 w-full rounded-xl" />
+            ))}
+          </div>
+        </DashboardSection>
+        <div className="grid gap-6 md:grid-cols-7 lg:grid-cols-7">
+          <Skeleton className="col-span-4 h-[400px] rounded-xl" />
+          <Skeleton className="col-span-3 h-[400px] rounded-xl" />
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="p-8 text-center bg-rose-500/10 rounded-xl border border-rose-500/20 text-rose-500">
+        <ShieldAlert className="h-10 w-10 mx-auto mb-4" />
+        <h3 className="text-lg font-semibold">Failed to load operations data</h3>
+        <p className="text-sm opacity-80">{(error as Error).message}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
       <DashboardSection title="Operations Center">
@@ -13,7 +45,7 @@ export function SubAdminDashboard() {
           <StatCard
             index={1}
             title="Total Users"
-            value="12,543"
+            value={data?.totalUsers.toLocaleString() ?? '0'}
             icon={Users}
             description="All time registered"
             trend="up"
@@ -22,7 +54,7 @@ export function SubAdminDashboard() {
           <StatCard
             index={2}
             title="Total Vendors"
-            value="845"
+            value={data?.totalVendors.toLocaleString() ?? '0'}
             icon={Store}
             description="All time registered"
             trend="up"
@@ -31,7 +63,7 @@ export function SubAdminDashboard() {
           <StatCard
             index={3}
             title="Total Bookings"
-            value="45,231"
+            value={data?.totalBookings.toLocaleString() ?? '0'}
             icon={CalendarCheck2}
             description="All time bookings"
             trend="up"
@@ -40,7 +72,7 @@ export function SubAdminDashboard() {
           <StatCard
             index={4}
             title="Today's Bookings"
-            value="142"
+            value={data?.todaysBookings.toLocaleString() ?? '0'}
             icon={Activity}
             description="Bookings today"
             trend="up"
@@ -50,7 +82,7 @@ export function SubAdminDashboard() {
             <StatCard
               index={5}
               title="Pending Verifications"
-              value="12"
+              value={data?.pendingVerifications.toLocaleString() ?? '0'}
               icon={Clock}
               description="Vendors awaiting approval"
               color="rose"
@@ -84,41 +116,20 @@ export function SubAdminDashboard() {
             </div>
           </CardHeader>
           <CardContent className="flex flex-col gap-2 pt-6">
-            <RecentItem
-              index={1}
-              initials="JD"
-              primary="John Doe"
-              secondary="Shop closed down unexpectedly"
-              tertiary="PENDING"
-            />
-            <RecentItem
-              index={2}
-              initials="AS"
-              primary="Alice Smith"
-              secondary="Barber unavailable at chosen time"
-              tertiary="RESOLVED"
-            />
-            <RecentItem
-              index={3}
-              initials="RK"
-              primary="Rahul K."
-              secondary="App crashed during payment"
-              tertiary="INVESTIGATING"
-            />
-            <RecentItem
-              index={4}
-              initials="MJ"
-              primary="Mary Jane"
-              secondary="Long waiting time at shop"
-              tertiary="PENDING"
-            />
-            <RecentItem
-              index={5}
-              initials="TG"
-              primary="Tom Green"
-              secondary="Location issue with map display"
-              tertiary="RESOLVED"
-            />
+            {data?.recentIssues.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">No recent issues</p>
+            ) : (
+              data?.recentIssues.map((issue, i) => (
+                <RecentItem
+                  key={issue.id}
+                  index={i}
+                  initials={issue.userName.substring(0, 2).toUpperCase()}
+                  primary={issue.userName}
+                  secondary={issue.reason}
+                  tertiary={issue.status}
+                />
+              ))
+            )}
           </CardContent>
         </Card>
       </div>

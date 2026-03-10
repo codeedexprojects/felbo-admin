@@ -45,7 +45,6 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { useAds, useUpdateAd, useDeleteAd } from '@/features/advertisements/hooks';
 import { Ad, UpdateAdInput } from '@/features/advertisements/types';
 import { BannerImageUploader } from '@/features/advertisements/BannerImageUploader';
-import { buildS3Url } from '@/features/advertisements/upload';
 import apiClient from '@/lib/axios';
 import { ApiResponse } from '@/types/api';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -107,7 +106,7 @@ function AdCard({
         {ad.bannerImage ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={buildS3Url(ad.bannerImage)}
+            src={ad.bannerImage}
             alt={ad.title}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             onError={(e) => {
@@ -168,7 +167,7 @@ function AdCard({
             {format(new Date(ad.createdAt), 'dd MMM yyyy')}
           </span>
           <a
-            href={buildS3Url(ad.bannerImage)}
+            href={ad.bannerImage}
             target="_blank"
             rel="noreferrer"
             className="text-[10px] text-primary/70 hover:text-primary flex items-center gap-0.5 transition-colors"
