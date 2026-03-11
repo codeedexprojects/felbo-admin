@@ -22,11 +22,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useBookings } from '../hooks';
-import { useVendors } from '@/features/vendors/hooks';
 import { createBookingColumns } from './BookingColumns';
 import { useMounted } from '@/hooks/use-mounted';
 import { useDebounce } from '@/hooks/useDebounce';
 import { ListBookingsFilter } from '../types';
+
+import { useAuthStore } from '@/stores/authStore';
 
 function SkeletonRow({ cols }: { cols: number }) {
   return (
@@ -41,6 +42,7 @@ function SkeletonRow({ cols }: { cols: number }) {
 }
 
 export function BookingsTable() {
+  const { admin } = useAuthStore();
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
   const [searchValue, setSearchValue] = useState('');
   const debouncedSearch = useDebounce(searchValue, 500);
@@ -60,11 +62,9 @@ export function BookingsTable() {
   }, [debouncedSearch]);
 
   const { data, isLoading, isError } = useBookings(filter);
-  const vendorsQuery = useVendors({ page: 1, limit: 100 });
-  const vendors = vendorsQuery.data?.vendors || [];
   const mounted = useMounted();
 
-  const columns = useMemo(() => createBookingColumns(), []);
+  const columns = useMemo(() => createBookingColumns(admin?.role), [admin?.role]);
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
@@ -79,33 +79,31 @@ export function BookingsTable() {
 
   if (!mounted) return null;
 
-  const counts = data?.counts;
-
   const stats = [
     {
       label: 'Total Bookings',
-      value: counts?.total ?? data?.total ?? 0,
+      value: data?.total ?? 0,
       icon: CalendarDays,
       color: 'text-blue-600',
       bg: 'bg-blue-50',
     },
     {
       label: 'Confirmed',
-      value: counts?.confirmed ?? 0,
+      value: 0, // Not supported by backend yet
       icon: Calendar,
       color: 'text-orange-500',
       bg: 'bg-orange-50',
     },
     {
       label: 'Completed',
-      value: counts?.completed ?? 0,
+      value: 0, // Not supported by backend yet
       icon: CheckCircle2,
       color: 'text-emerald-600',
       bg: 'bg-emerald-50',
     },
     {
       label: 'Cancelled',
-      value: counts?.cancelled ?? 0,
+      value: 0, // Not supported by backend yet
       icon: Ban,
       color: 'text-red-500',
       bg: 'bg-red-50',
@@ -115,12 +113,6 @@ export function BookingsTable() {
   const handleStatusChange = (value: string) => {
     const newStatus = value === 'ALL' ? undefined : value;
     setFilter((prev) => ({ ...prev, status: newStatus, page: 1 }));
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-  };
-
-  const handleVendorChange = (value: string) => {
-    const newVendorId = value === 'ALL' ? undefined : value;
-    setFilter((prev) => ({ ...prev, vendorId: newVendorId, page: 1 }));
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   };
 
@@ -180,29 +172,18 @@ export function BookingsTable() {
             <SelectItem value="COMPLETED" className="text-sm">
               Completed
             </SelectItem>
-            <SelectItem value="CANCELLED" className="text-sm">
-              Cancelled
+            <SelectItem value="CANCELLED_BY_USER" className="text-sm">
+              Cancelled (User)
             </SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select
-          value={filter.vendorId || 'ALL'}
-          onValueChange={handleVendorChange}
-          disabled={vendorsQuery.isLoading}
-        >
-          <SelectTrigger className="w-[160px] h-10 text-sm border-border/60 bg-muted/30">
-            <SelectValue placeholder="All Vendors" />
-          </SelectTrigger>
-          <SelectContent align="end">
-            <SelectItem value="ALL" className="text-sm">
-              All Vendors
+            <SelectItem value="CANCELLED_BY_VENDOR" className="text-sm">
+              Cancelled (Vendor)
             </SelectItem>
-            {vendors.map((v) => (
-              <SelectItem key={v.id} value={v.id} className="text-sm">
-                {v.ownerName}
-              </SelectItem>
-            ))}
+            <SelectItem value="NO_SHOW" className="text-sm">
+              No Show
+            </SelectItem>
+            <SelectItem value="PENDING_PAYMENT" className="text-sm">
+              Pending Payment
+            </SelectItem>
           </SelectContent>
         </Select>
 

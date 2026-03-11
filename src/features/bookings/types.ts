@@ -5,39 +5,22 @@ export interface ListBookingsFilter {
   status?: string;
   startDate?: string;
   endDate?: string;
-  vendorId?: string;
-}
-
-export interface BookingUser {
-  id: string;
-  name: string;
-  phone: string;
-}
-
-export interface BookingVendor {
-  id: string;
-  shopName: string;
 }
 
 export interface BookingListItem {
   id: string;
   bookingNumber: string;
-  user: BookingUser;
-  vendor: BookingVendor;
-  status: 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
+  userPhone: string;
+  shopName: string;
+  barberName: string;
   date: string;
-  time: string;
-  totalAmount: number;
-  paidAmount: number;
-  paymentStatus: string;
+  startTime: string;
+  endTime: string;
+  totalServiceAmount: number;
+  advancePaid: number;
+  remainingAmount: number;
+  status: string;
   createdAt: string;
-}
-
-export interface BookingStatusCounts {
-  total: number;
-  confirmed: number;
-  completed: number;
-  cancelled: number;
 }
 
 export interface ListBookingsResponse {
@@ -46,41 +29,49 @@ export interface ListBookingsResponse {
   page: number;
   limit: number;
   totalPages: number;
-  counts: BookingStatusCounts;
 }
 
-export interface BookingService {
-  name: string;
+export interface BookingServiceSnapshot {
+  serviceId: string;
+  serviceName: string;
   price: number;
-  duration: number;
-  barberName: string;
+  durationMinutes: number;
 }
 
-export interface PaymentDetails {
-  method: string;
-  advanceAmount: number;
-  shopAmount: number;
-  totalAmount: number;
-  status: string;
-}
-
-export interface RefundDetails {
-  status: string;
-  amount: number;
-  reason?: string;
-  processedAt?: string;
+export interface BookingCancellation {
+  cancelledAt: string;
+  cancelledBy: string;
+  reason: string;
+  refundAmount: number;
+  refundType: string;
+  refundStatus: string;
 }
 
 export interface BookingDetail {
   id: string;
   bookingNumber: string;
-  user: BookingUser;
-  vendor: BookingVendor;
-  services: BookingService[];
-  status: 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
+  userId: string;
+  userName: string;
+  userPhone: string;
+  shopId: string;
+  shopName: string;
+  barberId: string;
+  barberName: string;
+  barberSelectionType: string;
   date: string;
-  time: string;
-  payment: PaymentDetails;
-  refund?: RefundDetails;
+  startTime: string;
+  endTime: string;
+  totalDurationMinutes: number;
+  services: BookingServiceSnapshot[];
+  totalServiceAmount: number;
+  advancePaid: number;
+  remainingAmount: number;
+  paymentMethod: string;
+  paymentId?: string;
+  razorpayOrderId?: string;
+  status: string;
+  cancellation?: BookingCancellation;
+  completedAt?: string;
   createdAt: string;
+  updatedAt: string;
 }
