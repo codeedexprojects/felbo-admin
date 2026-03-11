@@ -1,9 +1,17 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState } from 'react';
 import { flexRender, getCoreRowModel, useReactTable, ColumnDef } from '@tanstack/react-table';
-import { CheckCircle2, AlertTriangle } from 'lucide-react';
-
+import { CheckCircle2, AlertTriangle, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
@@ -19,20 +27,41 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { usePayoutHistory, useVerifyPayout } from '../hooks';
-import { PayoutHistoryItem, PayoutHistoryFilter } from '../types';
+import { usePayouts, useAcceptPayout, useRejectPayout } from '../hooks';
+import { PayoutItemDto, PayoutStatus, PayoutListFilter } from '../types';
 import { useMounted } from '@/hooks/use-mounted';
-import { cn } from '@/lib/utils';
+
+function fmt(n: number) {
+  return `₹${n.toLocaleString('en-IN')}`;
+}
+
+function fmtDate(d: string) {
+  return new Date(d).toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function StatusBadge({ status }: { status: PayoutStatus }) {
+  if (status === 'ACCEPTED')
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700 border border-emerald-100">
+        <CheckCircle2 className="h-3 w-3" /> Accepted
+      </span>
+    );
+  if (status === 'REJECTED')
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-1 text-[11px] font-medium text-rose-700 border border-rose-100">
+        <AlertTriangle className="h-3 w-3" /> Rejected
+      </span>
+    );
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-700 border border-amber-100">
+      <Clock className="h-3 w-3" /> Pending
+    </span>
+  );
+}
 
 function SkeletonRow({ cols }: { cols: number }) {
   return (
@@ -46,237 +75,140 @@ function SkeletonRow({ cols }: { cols: number }) {
   );
 }
 
-function formatCurrency(amount: number) {
-  return `₹${amount.toLocaleString('en-IN')}`;
-}
-
-function PayoutStatusBadge({ status }: { status: PayoutHistoryItem['status'] }) {
-  const styles = {
-    PENDING: 'bg-amber-50 text-amber-700',
-    CONFIRMED: 'bg-emerald-50 text-emerald-700',
-    DISPUTED: 'bg-red-50 text-red-700',
-  };
-  const labels = { PENDING: 'Pending Verification', CONFIRMED: 'Confirmed', DISPUTED: 'Disputed' };
-
-  return (
-    <span
-      className={cn(
-        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-        styles[status]
-      )}
-    >
-      {labels[status]}
-    </span>
-  );
-}
-
-interface ActionButtonsProps {
-  row: PayoutHistoryItem;
-  onConfirm: (id: string) => void;
-  onDispute: (id: string) => void;
-  isProcessing: boolean;
-}
-
-function ActionButtons({ row, onConfirm, onDispute, isProcessing }: ActionButtonsProps) {
-  if (row.status !== 'PENDING') return <span className="text-xs text-muted-foreground">—</span>;
-  return (
-    <div className="flex items-center gap-2">
-      <Button
-        size="sm"
-        className="h-7 gap-1 bg-emerald-600 text-white hover:bg-emerald-700 text-xs px-2"
-        onClick={() => onConfirm(row.id)}
-        disabled={isProcessing}
-      >
-        <CheckCircle2 className="h-3 w-3" />
-        Received
-      </Button>
-      <Button
-        size="sm"
-        variant="outline"
-        className="h-7 gap-1 border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700 text-xs px-2"
-        onClick={() => onDispute(row.id)}
-        disabled={isProcessing}
-      >
-        <AlertTriangle className="h-3 w-3" />
-        Not Received
-      </Button>
-    </div>
-  );
-}
-
 export function PayoutHistoryTable() {
-  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
-  const [filter, setFilter] = useState<PayoutHistoryFilter>({ page: 1, limit: 10 });
-  const [disputeDialogOpen, setDisputeDialogOpen] = useState(false);
-  const [disputingId, setDisputingId] = useState<string | null>(null);
-  const [disputeReason, setDisputeReason] = useState('');
-
-  const { mutate: verifyPayout, isPending: isVerifying } = useVerifyPayout();
-
-  useEffect(() => {
-    setFilter((prev) => ({ ...prev, page: pagination.pageIndex + 1, limit: pagination.pageSize }));
-  }, [pagination]);
-
-  const { data, isLoading, isError } = usePayoutHistory(filter);
   const mounted = useMounted();
+  const [filter, setFilter] = useState<PayoutListFilter>({ page: 1, limit: 10 });
+  const [rejectTarget, setRejectTarget] = useState<PayoutItemDto | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
 
-  const handleConfirm = (id: string) => {
-    verifyPayout({ id, input: { status: 'CONFIRMED' } });
-  };
+  const { data, isLoading, isError } = usePayouts(filter);
+  const acceptMutation = useAcceptPayout();
+  const rejectMutation = useRejectPayout();
 
-  const handleDisputeClick = (id: string) => {
-    setDisputingId(id);
-    setDisputeReason('');
-    setDisputeDialogOpen(true);
-  };
-
-  const handleDisputeConfirm = () => {
-    if (!disputingId) return;
-    verifyPayout(
-      { id: disputingId, input: { status: 'DISPUTED', disputeReason: disputeReason || undefined } },
-      {
-        onSuccess: () => {
-          setDisputeDialogOpen(false);
-          setDisputingId(null);
-          setDisputeReason('');
-        },
-      }
-    );
-  };
-
-  const cols = useMemo<ColumnDef<PayoutHistoryItem>[]>(
-    () => [
-      {
-        header: '#',
-        id: 'index',
-        cell: ({ row }) => (
-          <span className="text-sm text-muted-foreground tabular-nums">{row.index + 1}</span>
-        ),
+  const columns: ColumnDef<PayoutItemDto>[] = [
+    {
+      header: 'Sent On',
+      accessorKey: 'createdAt',
+      cell: ({ getValue }) => (
+        <span className="text-sm font-medium">{fmtDate(getValue<string>())}</span>
+      ),
+    },
+    {
+      header: 'Bookings',
+      accessorKey: 'bookingCount',
+      cell: ({ getValue }) => (
+        <span className="text-sm tabular-nums text-muted-foreground">
+          {getValue<number>().toLocaleString('en-IN')}
+        </span>
+      ),
+    },
+    {
+      header: 'Amount',
+      accessorKey: 'amount',
+      cell: ({ getValue }) => (
+        <span className="text-sm font-semibold tabular-nums">{fmt(getValue<number>())}</span>
+      ),
+    },
+    {
+      header: 'Status',
+      accessorKey: 'status',
+      cell: ({ getValue }) => <StatusBadge status={getValue<PayoutStatus>()} />,
+    },
+    {
+      header: 'Actions',
+      id: 'actions',
+      cell: ({ row }) => {
+        if (row.original.status !== 'PENDING') return null;
+        return (
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+              disabled={acceptMutation.isPending}
+              onClick={() => acceptMutation.mutate(row.original.id)}
+            >
+              {acceptMutation.isPending ? 'Confirming…' : 'Confirm Receipt'}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs border-rose-200 text-rose-700 hover:bg-rose-50"
+              onClick={() => {
+                setRejectTarget(row.original);
+                setRejectReason('');
+              }}
+            >
+              Dispute
+            </Button>
+          </div>
+        );
       },
-      {
-        header: 'Amount',
-        accessorKey: 'amount',
-        cell: ({ getValue }) => (
-          <span className="text-sm font-semibold text-emerald-600">
-            {formatCurrency(getValue<number>())}
-          </span>
-        ),
-      },
-      {
-        header: 'Bookings',
-        accessorKey: 'bookingCount',
-        cell: ({ getValue }) => <span className="text-sm tabular-nums">{getValue<number>()}</span>,
-      },
-      {
-        header: 'Status',
-        accessorKey: 'status',
-        cell: ({ getValue }) => (
-          <PayoutStatusBadge status={getValue<PayoutHistoryItem['status']>()} />
-        ),
-      },
-      {
-        header: 'Note',
-        accessorKey: 'note',
-        cell: ({ getValue }) => (
-          <span className="text-xs text-muted-foreground">{getValue<string>() || '—'}</span>
-        ),
-      },
-      {
-        header: 'Sent On',
-        accessorKey: 'sentAt',
-        cell: ({ getValue }) => (
-          <span className="text-xs text-muted-foreground">
-            {new Date(getValue<string>()).toLocaleDateString('en-IN', {
-              day: '2-digit',
-              month: 'short',
-              year: 'numeric',
-            })}
-          </span>
-        ),
-      },
-      {
-        header: 'Dispute Reason',
-        accessorKey: 'disputeReason',
-        cell: ({ getValue }) => (
-          <span className="text-xs text-muted-foreground max-w-[180px] line-clamp-2">
-            {getValue<string>() || '—'}
-          </span>
-        ),
-      },
-      {
-        header: 'Action',
-        id: 'actions',
-        cell: ({ row }) => (
-          <ActionButtons
-            row={row.original}
-            onConfirm={handleConfirm}
-            onDispute={handleDisputeClick}
-            isProcessing={isVerifying}
-          />
-        ),
-      },
-    ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isVerifying]
-  );
+    },
+  ];
 
   const table = useReactTable({
-    data: data?.payouts || [],
-    columns: cols,
+    data: data?.payouts ?? [],
+    columns,
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
-    pageCount: data?.totalPages || -1,
-    onPaginationChange: setPagination,
-    state: { pagination },
+    pageCount: data?.totalPages ?? -1,
   });
 
   if (!mounted) return null;
 
-  const handleStatusChange = (value: string) => {
-    setFilter((prev) => ({ ...prev, status: value === 'ALL' ? undefined : value, page: 1 }));
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-  };
-
   return (
-    <div className="space-y-4">
-      {/* Filter bar */}
-      <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-card px-4 py-3 shadow-sm">
-        <Select value={filter.status || 'ALL'} onValueChange={handleStatusChange}>
-          <SelectTrigger className="w-[180px] h-10 text-sm border-border/60 bg-muted/30">
-            <SelectValue placeholder="All Status" />
+    <>
+      {/* Status filter & Error Banner */}
+      <div className="flex flex-col gap-3">
+        <Select
+          value={filter.status ?? 'ALL'}
+          onValueChange={(v) =>
+            setFilter((f) => ({
+              ...f,
+              status: v === 'ALL' ? undefined : (v as PayoutStatus),
+              page: 1,
+            }))
+          }
+        >
+          <SelectTrigger className="h-9 w-40 text-sm border-border/60">
+            <SelectValue placeholder="All statuses" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="ALL" className="text-sm">
-              All Status
-            </SelectItem>
-            <SelectItem value="PENDING" className="text-sm">
-              Pending Verification
-            </SelectItem>
-            <SelectItem value="CONFIRMED" className="text-sm">
-              Confirmed
-            </SelectItem>
-            <SelectItem value="DISPUTED" className="text-sm">
-              Disputed
-            </SelectItem>
+            <SelectItem value="ALL">All statuses</SelectItem>
+            <SelectItem value="PENDING">Pending</SelectItem>
+            <SelectItem value="ACCEPTED">Accepted</SelectItem>
+            <SelectItem value="REJECTED">Rejected</SelectItem>
           </SelectContent>
         </Select>
+
+        {acceptMutation.isError && (
+          <div className="rounded-md bg-rose-50 p-3 text-sm text-rose-600 border border-rose-100 flex items-start gap-2">
+            <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+            <p>
+              {acceptMutation.error instanceof Error
+                ? acceptMutation.error.message
+                : 'Failed to accept payout'}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden">
+      <div className="rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden mt-3">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader className="bg-muted/40">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id} className="hover:bg-transparent border-border/40">
-                  {headerGroup.headers.map((header) => (
+              {table.getHeaderGroups().map((hg) => (
+                <TableRow key={hg.id} className="hover:bg-transparent border-border/40">
+                  {hg.headers.map((h) => (
                     <TableHead
-                      key={header.id}
+                      key={h.id}
                       className="h-10 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
                     >
-                      {header.isPlaceholder
+                      {h.isPlaceholder
                         ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
+                        : flexRender(h.column.columnDef.header, h.getContext())}
                     </TableHead>
                   ))}
                 </TableRow>
@@ -284,11 +216,13 @@ export function PayoutHistoryTable() {
             </TableHeader>
             <TableBody className="text-sm">
               {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} cols={cols.length} />)
+                Array.from({ length: 5 }).map((_, i) => (
+                  <SkeletonRow key={i} cols={columns.length} />
+                ))
               ) : isError ? (
                 <TableRow>
-                  <TableCell colSpan={cols.length} className="h-32 text-center text-red-500">
-                    Failed to load payout history. Please try refreshing.
+                  <TableCell colSpan={columns.length} className="h-32 text-center text-rose-500">
+                    Failed to load payout history. Please try again.
                   </TableCell>
                 </TableRow>
               ) : table.getRowModel().rows.length ? (
@@ -307,10 +241,10 @@ export function PayoutHistoryTable() {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={cols.length}
+                    colSpan={columns.length}
                     className="h-32 text-center text-muted-foreground"
                   >
-                    No payouts found.
+                    No payout records found.
                   </TableCell>
                 </TableRow>
               )}
@@ -321,75 +255,91 @@ export function PayoutHistoryTable() {
         {/* Pagination */}
         <div className="flex items-center justify-between border-t border-border/40 bg-muted/20 px-4 py-3">
           <p className="text-xs text-muted-foreground">
-            Showing{' '}
-            <span className="font-medium text-foreground">
-              {data?.total === 0
-                ? 0
-                : table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}
-            </span>{' '}
-            to{' '}
-            <span className="font-medium text-foreground">
-              {Math.min(
-                (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
-                data?.total ?? 0
-              )}
-            </span>{' '}
-            of <span className="font-medium text-foreground">{data?.total ?? 0}</span> payouts
+            Page <span className="font-medium text-foreground">{filter.page}</span> of{' '}
+            <span className="font-medium text-foreground">{data?.totalPages ?? '—'}</span>
+            {' · '}
+            <span className="font-medium text-foreground">{data?.total ?? 0}</span> total
           </p>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
-              className="h-8 border-border/60"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
+              className="h-8 gap-1"
+              disabled={(filter.page ?? 1) <= 1}
+              onClick={() => setFilter((f) => ({ ...f, page: (f.page ?? 1) - 1 }))}
             >
-              Previous
+              <ChevronLeft className="h-3.5 w-3.5" /> Prev
             </Button>
             <Button
               variant="outline"
               size="sm"
-              className="h-8 border-border/60"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
+              className="h-8 gap-1"
+              disabled={(filter.page ?? 1) >= (data?.totalPages ?? 1)}
+              onClick={() => setFilter((f) => ({ ...f, page: (f.page ?? 1) + 1 }))}
             >
-              Next
+              Next <ChevronRight className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Dispute dialog */}
-      <Dialog open={disputeDialogOpen} onOpenChange={setDisputeDialogOpen}>
-        <DialogContent className="sm:max-w-[400px]">
+      {/* Reject / Dispute Dialog */}
+      <Dialog open={!!rejectTarget} onOpenChange={() => setRejectTarget(null)}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Report Amount Not Received</DialogTitle>
-            <DialogDescription>
-              Please describe the issue. The super admin will be notified to investigate.
-            </DialogDescription>
+            <DialogTitle>Dispute Payout</DialogTitle>
           </DialogHeader>
-          <div className="py-2 space-y-2">
-            <label className="text-sm font-medium">Reason (optional)</label>
-            <Input
-              placeholder="e.g. Amount not credited to bank account"
-              value={disputeReason}
-              onChange={(e) => setDisputeReason(e.target.value)}
-            />
-          </div>
+          <p className="text-sm text-muted-foreground">
+            Please describe why you are disputing the payout of{' '}
+            <span className="font-semibold text-foreground">
+              {rejectTarget ? fmt(rejectTarget.amount) : ''}
+            </span>
+            .
+          </p>
+          <Textarea
+            placeholder="e.g. Amount was not credited to my account within 3 business days…"
+            className="resize-none min-h-[100px] text-sm"
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+          />
+
+          {rejectMutation.isError && (
+            <div className="rounded-md bg-rose-50 p-3 text-sm text-rose-600 border border-rose-100 flex items-start gap-2 mt-2">
+              <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+              <p>
+                {rejectMutation.error instanceof Error
+                  ? rejectMutation.error.message
+                  : 'Failed to submit dispute'}
+              </p>
+            </div>
+          )}
+
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setDisputeDialogOpen(false)}
-              disabled={isVerifying}
+              onClick={() => {
+                setRejectTarget(null);
+                rejectMutation.reset();
+              }}
             >
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDisputeConfirm} disabled={isVerifying}>
-              {isVerifying ? 'Submitting...' : 'Confirm Dispute'}
+            <Button
+              variant="destructive"
+              disabled={!rejectReason.trim() || rejectMutation.isPending}
+              onClick={() => {
+                if (!rejectTarget) return;
+                rejectMutation.mutate(
+                  { id: rejectTarget.id, rejectionReason: rejectReason.trim() },
+                  { onSuccess: () => setRejectTarget(null) }
+                );
+              }}
+            >
+              {rejectMutation.isPending ? 'Submitting…' : 'Submit Dispute'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }

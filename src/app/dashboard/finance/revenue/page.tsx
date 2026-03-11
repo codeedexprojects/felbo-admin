@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { RevenueOverviewCards } from '@/features/finance/components/RevenueOverviewCards';
 import { RevenueReportsTable } from '@/features/finance/components/RevenueReportsTable';
 import { AssociationRevenueTable } from '@/features/finance/components/AssociationRevenueTable';
+import { AssociationCommissionCard } from '@/features/finance/components/AssociationCommissionCard';
+import { RevenueChart } from '@/features/finance/components/RevenueChart';
 import { useAuthStore } from '@/stores/authStore';
 
 export default function RevenuePage() {
@@ -35,6 +37,7 @@ export default function RevenuePage() {
 
   return (
     <div className="space-y-8">
+      {/* Overview cards + commission card */}
       <div className="space-y-4">
         <PageHeader
           title="Revenue Overview"
@@ -56,9 +59,24 @@ export default function RevenuePage() {
             </div>
           }
         />
-        <RevenueOverviewCards />
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
+          <RevenueOverviewCards asGridItems />
+          <AssociationCommissionCard />
+        </div>
       </div>
 
+      {/* Revenue chart */}
+      <div className="space-y-3">
+        <div>
+          <h3 className="text-base font-semibold text-foreground">Revenue Trend</h3>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Daily breakdown of gross revenue, association commissions, and net platform earnings.
+          </p>
+        </div>
+        <RevenueChart />
+      </div>
+
+      {/* Revenue reports table */}
       <div className="space-y-4">
         <div>
           <h3 className="text-base font-semibold text-foreground">Revenue Reports</h3>

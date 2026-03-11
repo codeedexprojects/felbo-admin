@@ -1,8 +1,9 @@
 'use client';
 
 import { TrendingUp, Calendar, CalendarDays, IndianRupee } from 'lucide-react';
-import { useRevenueOverview } from '../hooks';
+import { useFinanceSummary } from '../hooks';
 import { useMounted } from '@/hooks/use-mounted';
+import { FinanceSummaryPeriodDto } from '../types';
 
 function formatCurrency(amount: number) {
   return `₹${amount.toLocaleString('en-IN')}`;
@@ -21,7 +22,7 @@ const cards = [
   {
     key: 'thisWeek' as const,
     label: 'This Week',
-    description: 'Last 7 days',
+    description: 'Mon – now',
     icon: Calendar,
     color: 'text-emerald-600',
     bg: 'bg-emerald-50',
@@ -47,33 +48,44 @@ const cards = [
   },
 ];
 
-export function RevenueOverviewCards() {
-  const { data, isLoading } = useRevenueOverview();
+/**
+ * When `asGridItems` is true, renders bare card fragments so a parent grid
+ * can own the layout (used alongside AssociationCommissionCard in a 5-col grid).
+ */
+export function RevenueOverviewCards({ asGridItems = false }: { asGridItems?: boolean }) {
+  const { data, isLoading } = useFinanceSummary();
   const mounted = useMounted();
 
   if (!mounted) return null;
 
-  return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-      {cards.map((card) => (
+  const cardEls = cards.map((card) => {
+    const period: FinanceSummaryPeriodDto | undefined = data?.[card.key];
+    return (
+      <div
+        key={card.key}
+        className={`flex items-center gap-4 rounded-xl border bg-card p-5 shadow-sm ${card.border}`}
+      >
         <div
-          key={card.key}
-          className={`flex items-center gap-4 rounded-xl border bg-card p-5 shadow-sm ${card.border}`}
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${card.bg}`}
         >
-          <div
-            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${card.bg}`}
-          >
-            <card.icon className={`h-5 w-5 ${card.color}`} />
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs text-muted-foreground truncate">{card.label}</p>
-            <p className="text-xl font-bold text-foreground tabular-nums mt-0.5">
-              {isLoading ? '—' : formatCurrency(data?.[card.key] ?? 0)}
-            </p>
-            <p className="text-[11px] text-muted-foreground/70 mt-0.5">{card.description}</p>
-          </div>
+          <card.icon className={`h-5 w-5 ${card.color}`} />
         </div>
-      ))}
-    </div>
-  );
+        <div className="min-w-0">
+          <p className="text-xs text-muted-foreground truncate">{card.label}</p>
+          <p className="text-xl font-bold text-foreground tabular-nums mt-0.5">
+            {isLoading ? '—' : formatCurrency(period?.revenue ?? 0)}
+          </p>
+          <p className="text-[11px] text-muted-foreground/70 mt-0.5">
+            {isLoading
+              ? card.description
+              : `${(period?.bookingCount ?? 0).toLocaleString('en-IN')} bookings`}
+          </p>
+        </div>
+      </div>
+    );
+  });
+
+  if (asGridItems) return <>{cardEls}</>;
+
+  return <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">{cardEls}</div>;
 }
