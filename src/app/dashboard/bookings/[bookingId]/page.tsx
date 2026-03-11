@@ -195,8 +195,8 @@ export default function BookingDetailPage() {
 
         {/* Action: Process Refund */}
         {booking.status === 'CANCELLED' &&
-          booking.payment.status === 'ADVANCE_PAID' &&
-          (!booking.refund || booking.refund.status !== 'PROCESSED') && (
+          booking.advancePaid > 0 &&
+          (!booking.cancellation || booking.cancellation.refundStatus !== 'PROCESSED') && (
             <Dialog open={refundOpen} onOpenChange={setRefundOpen}>
               <DialogTrigger asChild>
                 <Button className="gap-2 bg-orange-600 hover:bg-orange-700 text-white shadow-sm">
@@ -211,8 +211,8 @@ export default function BookingDetailPage() {
                     Issue Refund
                   </DialogTitle>
                   <DialogDescription>
-                    This will process a manual refund of ₹{booking.payment.advanceAmount} back to
-                    the user&apos;s payment method or wallet.
+                    This will process a manual refund of ₹{booking.advancePaid} back to the
+                    user&apos;s payment method or wallet.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-3 py-3">
@@ -245,21 +245,20 @@ export default function BookingDetailPage() {
 
       <div className="grid gap-5 md:grid-cols-2">
         {/* User Details */}
-        <Section title="User Details" icon={User}>
-          <div className="grid grid-cols-2 gap-x-6 gap-y-5">
-            <Field label="Name" value={booking.user.name} />
-            <Field label="Phone" value={booking.user.phone} />
-          </div>
-        </Section>
+        {(booking.userName || booking.userPhone) && (
+          <Section title="User Details" icon={User}>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-5">
+              <Field label="Name" value={booking.userName} />
+              <Field label="Phone" value={booking.userPhone} />
+            </div>
+          </Section>
+        )}
 
         {/* Vendor & Barber Details */}
         <Section title="Shop Details" icon={MapPin}>
           <div className="grid grid-cols-2 gap-x-6 gap-y-5">
-            <Field label="Shop Name" value={booking.vendor.shopName} />
-            <Field
-              label="Primary Barber"
-              value={booking.services[0]?.barberName || 'Any Available'}
-            />
+            <Field label="Shop Name" value={booking.shopName} />
+            <Field label="Primary Barber" value={booking.barberName || 'Any Available'} />
           </div>
         </Section>
 
@@ -267,21 +266,21 @@ export default function BookingDetailPage() {
         <Section title="Appointment Time" icon={Clock}>
           <div className="grid grid-cols-2 gap-x-6 gap-y-5">
             <Field label="Date" value={safeFormat(booking.date, 'EEEE, dd MMM yyyy')} />
-            <Field label="Time" value={booking.time} />
+            <Field label="Time" value={`${booking.startTime} - ${booking.endTime}`} />
           </div>
         </Section>
 
         {/* Financial Details */}
         <Section title="Payment Details" icon={CreditCard}>
           <div className="grid grid-cols-2 gap-x-6 gap-y-5">
-            <Field label="Total Amount" value={`₹${booking.payment.totalAmount}`} />
-            <Field label="Advance Paid" value={`₹${booking.payment.advanceAmount}`} />
-            <Field label="To Pay at Shop" value={`₹${booking.payment.shopAmount}`} />
+            <Field label="Total Amount" value={`₹${booking.totalServiceAmount}`} />
+            <Field label="Advance Paid" value={`₹${booking.advancePaid}`} />
+            <Field label="To Pay at Shop" value={`₹${booking.remainingAmount}`} />
             <Field
-              label="Payment Status"
+              label="Payment Method"
               value={
                 <Badge variant="secondary" className="text-[10px] uppercase">
-                  {booking.payment.status.replace('_', ' ')}
+                  {(booking.paymentMethod || '—').replace('_', ' ')}
                 </Badge>
               }
             />
@@ -289,24 +288,26 @@ export default function BookingDetailPage() {
         </Section>
 
         {/* Refund Box */}
-        {booking.refund && (
+        {booking.cancellation && (
           <Section title="Refund Logs" icon={Ban}>
             <div className="grid grid-cols-2 gap-x-6 gap-y-5">
               <Field
                 label="Refund Status"
                 value={
-                  <span className="text-orange-600 font-semibold">{booking.refund.status}</span>
+                  <span className="text-orange-600 font-semibold">
+                    {booking.cancellation.refundStatus}
+                  </span>
                 }
               />
-              <Field label="Amount" value={`₹${booking.refund.amount}`} />
+              <Field label="Amount" value={`₹${booking.cancellation.refundAmount}`} />
               <div className="col-span-2">
-                <Field label="Reason" value={booking.refund.reason || 'Not provided'} />
+                <Field label="Reason" value={booking.cancellation.reason || 'Not provided'} />
               </div>
-              {booking.refund.processedAt && (
+              {booking.cancellation.cancelledAt && (
                 <div className="col-span-2">
                   <Field
                     label="Processed At"
-                    value={safeFormat(booking.refund.processedAt, 'dd MMM yyyy, hh:mm a')}
+                    value={safeFormat(booking.cancellation.cancelledAt, 'dd MMM yyyy, hh:mm a')}
                   />
                 </div>
               )}
@@ -336,10 +337,10 @@ export default function BookingDetailPage() {
             <tbody className="divide-y divide-border/40">
               {booking.services.map((svc, idx) => (
                 <tr key={idx} className="hover:bg-muted/20">
-                  <td className="px-5 py-3 font-medium">{svc.name}</td>
-                  <td className="px-5 py-3 text-muted-foreground">{svc.barberName}</td>
+                  <td className="px-5 py-3 font-medium">{svc.serviceName}</td>
+                  <td className="px-5 py-3 text-muted-foreground">{booking.barberName}</td>
                   <td className="px-5 py-3 text-right text-muted-foreground">
-                    {svc.duration} mins
+                    {svc.durationMinutes} mins
                   </td>
                   <td className="px-5 py-3 text-right font-medium">₹{svc.price}</td>
                 </tr>
@@ -348,7 +349,7 @@ export default function BookingDetailPage() {
                 <td colSpan={3} className="px-5 py-4 text-right">
                   Total:
                 </td>
-                <td className="px-5 py-4 text-right">₹{booking.payment.totalAmount}</td>
+                <td className="px-5 py-4 text-right">₹{booking.totalServiceAmount}</td>
               </tr>
             </tbody>
           </table>
