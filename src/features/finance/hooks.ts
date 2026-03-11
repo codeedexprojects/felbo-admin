@@ -2,99 +2,144 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  getRevenueOverview,
-  getRevenueReports,
-  getRefunds,
-  getAssociationRevenue,
-  getPayoutEarningSummary,
-  getPayoutHistory,
-  sendPayout,
-  verifyPayout,
-  getAssociationAdminEarnings,
+  fetchFinanceSummary,
+  fetchRevenueChart,
+  fetchVendorRevenueTable,
+  fetchAssocFinanceSummary,
+  fetchAssocVendorRevenueTable,
+  fetchPayoutDashboard,
+  createPayout,
+  fetchPayouts,
+  fetchAssocPayoutSummary,
+  acceptPayout,
+  rejectPayout,
+  fetchRefundHistory,
 } from './api';
 import {
-  RevenueReportsFilter,
-  RefundsFilter,
-  AssociationRevenueFilter,
-  PayoutHistoryFilter,
-  SendPayoutInput,
-  VerifyPayoutInput,
+  FinancePeriod,
+  VendorRevenueTableFilter,
+  PayoutListFilter,
+  RefundHistoryFilter,
 } from './types';
 
-export const useRevenueOverview = () => {
+// ─── Finance hooks ────────────────────────────────────────────────────────────
+
+export const useFinanceSummary = () => {
   return useQuery({
-    queryKey: ['finance', 'revenue-overview'],
-    queryFn: getRevenueOverview,
+    queryKey: ['finance', 'summary'],
+    queryFn: fetchFinanceSummary,
+    staleTime: 60 * 1000,
   });
 };
 
-export const useRevenueReports = (filters: RevenueReportsFilter) => {
+export const useRevenueChartData = (
+  period: FinancePeriod = 'month',
+  from?: string,
+  to?: string
+) => {
   return useQuery({
-    queryKey: ['finance', 'revenue-reports', filters],
-    queryFn: () => getRevenueReports(filters),
-    placeholderData: (previousData) => previousData,
+    queryKey: ['finance', 'chart-data', period, from, to],
+    queryFn: () => fetchRevenueChart(period, from, to),
+    staleTime: 2 * 60 * 1000,
+    enabled: period !== 'custom' || (!!from && !!to),
   });
 };
 
-export const useRefunds = (filters: RefundsFilter) => {
+export const useVendorRevenueTable = (filter: VendorRevenueTableFilter) => {
   return useQuery({
-    queryKey: ['finance', 'refunds', filters],
-    queryFn: () => getRefunds(filters),
-    placeholderData: (previousData) => previousData,
+    queryKey: ['finance', 'vendor-revenue', filter],
+    queryFn: () => fetchVendorRevenueTable(filter),
+    placeholderData: (previous) => previous,
+    enabled: filter.period !== 'custom' || (!!filter.from && !!filter.to),
   });
 };
 
-export const useAssociationRevenue = (filters: AssociationRevenueFilter) => {
+export const useAssocFinanceSummary = () => {
   return useQuery({
-    queryKey: ['finance', 'association-revenue', filters],
-    queryFn: () => getAssociationRevenue(filters),
-    placeholderData: (previousData) => previousData,
+    queryKey: ['finance', 'assoc-summary'],
+    queryFn: fetchAssocFinanceSummary,
+    staleTime: 60 * 1000,
   });
 };
 
-export const usePayoutEarningSummary = () => {
+export const useAssocVendorRevenueTable = (filter: VendorRevenueTableFilter) => {
   return useQuery({
-    queryKey: ['finance', 'payout-earning-summary'],
-    queryFn: getPayoutEarningSummary,
+    queryKey: ['finance', 'assoc-vendor-revenue', filter],
+    queryFn: () => fetchAssocVendorRevenueTable(filter),
+    placeholderData: (previous) => previous,
+    enabled: filter.period !== 'custom' || (!!filter.from && !!filter.to),
   });
 };
 
-export const usePayoutHistory = (filters: PayoutHistoryFilter) => {
+// ─── Payout hooks ──────────────────────────────────────────────────────────────
+
+/** Super Admin: totals dashboard card */
+export const usePayoutDashboard = () => {
   return useQuery({
-    queryKey: ['finance', 'payout-history', filters],
-    queryFn: () => getPayoutHistory(filters),
-    placeholderData: (previousData) => previousData,
+    queryKey: ['payouts', 'dashboard'],
+    queryFn: fetchPayoutDashboard,
+    staleTime: 60 * 1000,
   });
 };
 
-export const useAssociationAdminEarnings = () => {
+/** Super Admin + Association Admin: paginated payout list with optional status filter */
+export const usePayouts = (filter: PayoutListFilter) => {
   return useQuery({
-    queryKey: ['finance', 'association-admin-earnings'],
-    queryFn: getAssociationAdminEarnings,
+    queryKey: ['payouts', 'list', filter],
+    queryFn: () => fetchPayouts(filter),
+    placeholderData: (previous) => previous,
   });
 };
 
-// Super admin sends a payout to an association admin
-export const useSendPayout = () => {
-  const queryClient = useQueryClient();
+/** Association Admin: their pending summary */
+export const useAssocPayoutSummary = () => {
+  return useQuery({
+    queryKey: ['payouts', 'assoc-summary'],
+    queryFn: fetchAssocPayoutSummary,
+    staleTime: 60 * 1000,
+  });
+};
+
+/** Super Admin: trigger payout */
+export const useCreatePayout = () => {
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: SendPayoutInput) => sendPayout(input),
+    mutationFn: createPayout,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['finance', 'payout-history'] });
-      queryClient.invalidateQueries({ queryKey: ['finance', 'association-admin-earnings'] });
+      qc.invalidateQueries({ queryKey: ['payouts'] });
     },
   });
 };
 
-// Association admin confirms or disputes a received payout
-export const useVerifyPayout = () => {
-  const queryClient = useQueryClient();
+/** Association Admin: accept a payout */
+export const useAcceptPayout = () => {
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, input }: { id: string; input: VerifyPayoutInput }) =>
-      verifyPayout(id, input),
+    mutationFn: (id: string) => acceptPayout(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['finance', 'payout-history'] });
-      queryClient.invalidateQueries({ queryKey: ['finance', 'payout-earning-summary'] });
+      qc.invalidateQueries({ queryKey: ['payouts'] });
     },
+  });
+};
+
+/** Association Admin: reject a payout with reason */
+export const useRejectPayout = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, rejectionReason }: { id: string; rejectionReason: string }) =>
+      rejectPayout(id, rejectionReason),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['payouts'] });
+    },
+  });
+};
+
+// ─── Refund hooks ──────────────────────────────────────────────────────────────
+
+export const useRefundHistory = (filter: RefundHistoryFilter) => {
+  return useQuery({
+    queryKey: ['finance', 'refunds', filter],
+    queryFn: () => fetchRefundHistory(filter),
+    placeholderData: (previous) => previous,
   });
 };

@@ -1,81 +1,60 @@
 'use client';
 
-import React from 'react';
-import { Banknote, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
-import { usePayoutEarningSummary } from '../hooks';
+import { IndianRupee, BookOpen, Clock } from 'lucide-react';
+import { useAssocPayoutSummary } from '../hooks';
+import { useMounted } from '@/hooks/use-mounted';
 
-function formatCurrency(amount: number) {
-  return `₹${amount.toLocaleString('en-IN')}`;
+function fmt(n: number) {
+  return `₹${n.toLocaleString('en-IN')}`;
 }
 
 export function PayoutEarningsSummary() {
-  const { data, isLoading } = usePayoutEarningSummary();
+  const { data, isLoading } = useAssocPayoutSummary();
+  const mounted = useMounted();
 
-  const cards = [
-    {
-      label: 'Total Earned',
-      value: data?.totalEarned ?? 0,
-      sub: `${data?.totalBookings ?? 0} bookings × ₹2`,
-      icon: Banknote,
-      color: 'text-emerald-600',
-      bg: 'bg-emerald-50',
-      border: 'border-emerald-100',
-    },
-    {
-      label: 'Confirmed',
-      value: data?.totalConfirmed ?? 0,
-      sub: 'Amount verified & received',
-      icon: CheckCircle,
-      color: 'text-blue-600',
-      bg: 'bg-blue-50',
-      border: 'border-blue-100',
-    },
-    {
-      label: 'Pending Verification',
-      value: data?.pendingVerification ?? 0,
-      sub: 'Sent by super admin, awaiting your confirmation',
-      icon: Clock,
-      color: 'text-amber-600',
-      bg: 'bg-amber-50',
-      border: 'border-amber-100',
-    },
-    {
-      label: 'Disputed',
-      value: data?.disputed ?? 0,
-      sub: 'Amount not received',
-      icon: AlertTriangle,
-      color: 'text-red-600',
-      bg: 'bg-red-50',
-      border: 'border-red-100',
-    },
-  ];
+  if (!mounted) return null;
 
   return (
-    <div className="space-y-3">
-      <p className="text-sm text-muted-foreground">
-        You earn ₹2 per booking from vendors under your association. Super admin sends payouts
-        directly — confirm receipt once the amount is credited to your account.
-      </p>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {cards.map((card) => (
-          <div
-            key={card.label}
-            className={`flex items-start gap-4 rounded-xl border bg-card p-5 shadow-sm ${card.border}`}
-          >
-            <div
-              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${card.bg}`}
-            >
-              <card.icon className={`h-5 w-5 ${card.color}`} />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs text-muted-foreground">{card.label}</p>
-              <p className="text-2xl font-bold text-foreground tabular-nums">
-                {isLoading ? '—' : formatCurrency(card.value)}
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5 leading-tight">{card.sub}</p>
-            </div>
-          </div>
-        ))}
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      {/* Pending payout card */}
+      <div className="flex items-center gap-4 rounded-xl border border-amber-100 bg-card p-5 shadow-sm">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50">
+          <Clock className="h-5 w-5 text-amber-600" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs text-muted-foreground">Pending Payout</p>
+          <p className="text-2xl font-bold text-foreground tabular-nums mt-0.5">
+            {isLoading ? '—' : fmt(data?.pendingAmount ?? 0)}
+          </p>
+          <p className="text-[11px] text-muted-foreground/70 mt-0.5">
+            Awaiting Super Admin transfer
+          </p>
+        </div>
+      </div>
+
+      {/* Booking count card */}
+      <div className="flex items-center gap-4 rounded-xl border border-blue-100 bg-card p-5 shadow-sm">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50">
+          <IndianRupee className="h-5 w-5 text-blue-600" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs text-muted-foreground">Bookings Covered</p>
+          <p className="text-2xl font-bold text-foreground tabular-nums mt-0.5">
+            {isLoading ? '—' : (data?.bookingCount ?? 0).toLocaleString('en-IN')}
+          </p>
+          <p className="text-[11px] text-muted-foreground/70 mt-0.5">₹2 commission per booking</p>
+        </div>
+      </div>
+
+      {/* Info bar spanning both columns */}
+      <div className="sm:col-span-2 flex items-center gap-2 rounded-xl border border-border/60 bg-muted/30 px-4 py-3">
+        <BookOpen className="h-4 w-4 text-muted-foreground shrink-0" />
+        <p className="text-xs text-muted-foreground">
+          Your commission is{' '}
+          <span className="font-medium text-foreground">₹2 per completed booking</span> from vendors
+          in your association. The Super Admin transfers the pending amount to your bank account
+          manually.
+        </p>
       </div>
     </div>
   );

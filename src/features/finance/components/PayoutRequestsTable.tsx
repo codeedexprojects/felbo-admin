@@ -1,9 +1,30 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState } from 'react';
 import { flexRender, getCoreRowModel, useReactTable, ColumnDef } from '@tanstack/react-table';
-import { Send, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
-
+import {
+  IndianRupee,
+  TrendingUp,
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  Send,
+  ChevronLeft,
+  ChevronRight,
+  Calendar,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import {
   Select,
   SelectContent,
@@ -19,20 +40,43 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { usePayoutHistory, useSendPayout } from '../hooks';
-import { PayoutHistoryItem, PayoutHistoryFilter } from '../types';
+import { usePayoutDashboard, usePayouts, useCreatePayout } from '../hooks';
+import { PayoutItemDto, PayoutStatus, PayoutListFilter } from '../types';
 import { useMounted } from '@/hooks/use-mounted';
 import { cn } from '@/lib/utils';
+
+function fmt(n: number) {
+  return `₹${n.toLocaleString('en-IN')}`;
+}
+
+function fmtDate(d: string | null) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function StatusBadge({ status }: { status: PayoutStatus }) {
+  if (status === 'ACCEPTED')
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700 border border-emerald-100">
+        <CheckCircle2 className="h-3 w-3" /> Accepted
+      </span>
+    );
+  if (status === 'REJECTED')
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-1 text-[11px] font-medium text-rose-700 border border-rose-100">
+        <AlertTriangle className="h-3 w-3" /> Rejected
+      </span>
+    );
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-700 border border-amber-100">
+      <Clock className="h-3 w-3" /> Pending
+    </span>
+  );
+}
 
 function SkeletonRow({ cols }: { cols: number }) {
   return (
@@ -46,299 +90,245 @@ function SkeletonRow({ cols }: { cols: number }) {
   );
 }
 
-function formatCurrency(amount: number) {
-  return `₹${amount.toLocaleString('en-IN')}`;
-}
+const columns: ColumnDef<PayoutItemDto>[] = [
+  {
+    header: 'Date',
+    accessorKey: 'createdAt',
+    cell: ({ getValue }) => (
+      <span className="text-sm font-medium">{fmtDate(getValue<string>())}</span>
+    ),
+  },
+  {
+    header: 'Bookings',
+    accessorKey: 'bookingCount',
+    cell: ({ getValue }) => (
+      <span className="text-sm tabular-nums text-muted-foreground">
+        {getValue<number>().toLocaleString('en-IN')}
+      </span>
+    ),
+  },
+  {
+    header: 'Amount',
+    accessorKey: 'amount',
+    cell: ({ getValue }) => (
+      <span className="text-sm font-semibold tabular-nums">{fmt(getValue<number>())}</span>
+    ),
+  },
+  {
+    header: 'Status',
+    accessorKey: 'status',
+    cell: ({ getValue }) => <StatusBadge status={getValue<PayoutStatus>()} />,
+  },
+  {
+    header: 'Processed At',
+    accessorKey: 'processedAt',
+    cell: ({ getValue }) => (
+      <span className="text-sm tabular-nums text-muted-foreground">
+        {fmtDate(getValue<string | null>())}
+      </span>
+    ),
+  },
+  {
+    header: 'Rejection Reason',
+    accessorKey: 'rejectionReason',
+    cell: ({ getValue }) => {
+      const reason = getValue<string | null>();
+      if (!reason) return <span className="text-muted-foreground/40 text-sm">—</span>;
+      return (
+        <span className="text-xs text-rose-600 max-w-[200px] block truncate" title={reason}>
+          {reason}
+        </span>
+      );
+    },
+  },
+];
 
-function PayoutStatusBadge({ status }: { status: PayoutHistoryItem['status'] }) {
-  const styles = {
-    PENDING: 'bg-amber-50 text-amber-700',
-    CONFIRMED: 'bg-emerald-50 text-emerald-700',
-    DISPUTED: 'bg-red-50 text-red-700',
-  };
-  const labels = { PENDING: 'Pending', CONFIRMED: 'Confirmed', DISPUTED: 'Disputed' };
-
-  return (
-    <span
-      className={cn(
-        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-        styles[status]
-      )}
-    >
-      {labels[status]}
-    </span>
-  );
-}
-
-// --- Send Payout Dialog ---
-function SendPayoutDialog({
-  open,
-  onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-}) {
-  const [amount, setAmount] = useState('');
-  const [note, setNote] = useState('');
-  const { mutate: sendPayout, isPending } = useSendPayout();
-
-  const handleSubmit = () => {
-    if (!amount || Number(amount) <= 0) return;
-    sendPayout(
-      { amount: Number(amount), note: note || undefined },
-      {
-        onSuccess: () => {
-          onOpenChange(false);
-          setAmount('');
-          setNote('');
-        },
-      }
-    );
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[400px]">
-        <DialogHeader>
-          <DialogTitle>Send Payout</DialogTitle>
-          <DialogDescription>
-            Enter the payout amount. The association admin will verify receipt.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4 py-2">
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium">Amount (₹)</label>
-            <Input
-              type="number"
-              placeholder="Enter amount"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              min={1}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium">Note (optional)</label>
-            <Input
-              type="text"
-              placeholder="e.g. March payout"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} disabled={isPending || !amount || Number(amount) <= 0}>
-            {isPending ? 'Sending...' : 'Send Payout'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-// --- Main Table ---
 export function PayoutRequestsTable() {
-  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
-  const [filter, setFilter] = useState<PayoutHistoryFilter>({ page: 1, limit: 10 });
-  const [sendDialogOpen, setSendDialogOpen] = useState(false);
-
-  useEffect(() => {
-    setFilter((prev) => ({ ...prev, page: pagination.pageIndex + 1, limit: pagination.pageSize }));
-  }, [pagination]);
-
-  const { data, isLoading, isError } = usePayoutHistory(filter);
   const mounted = useMounted();
+  const [filter, setFilter] = useState<PayoutListFilter>({ page: 1, limit: 10 });
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
 
-  const pendingCount = data?.payouts.filter((p) => p.status === 'PENDING').length ?? 0;
-  const confirmedCount = data?.payouts.filter((p) => p.status === 'CONFIRMED').length ?? 0;
-  const disputedCount = data?.payouts.filter((p) => p.status === 'DISPUTED').length ?? 0;
+  const { data: dashboard, isLoading: dashLoading } = usePayoutDashboard();
+  const { data, isLoading, isError } = usePayouts(filter);
+  const createMutation = useCreatePayout();
 
-  const cols = useMemo<ColumnDef<PayoutHistoryItem>[]>(
-    () => [
-      {
-        header: '#',
-        id: 'index',
-        cell: ({ row }) => (
-          <span className="text-sm text-muted-foreground tabular-nums">{row.index + 1}</span>
-        ),
-      },
-      {
-        header: 'Association Admin',
-        accessorKey: 'associationAdminName',
-        cell: ({ getValue, row }) => (
-          <div>
-            <p className="text-sm font-medium">{getValue<string>()}</p>
-            <p className="text-xs text-muted-foreground">{row.original.associationAdminId}</p>
-          </div>
-        ),
-      },
-      {
-        header: 'Amount',
-        accessorKey: 'amount',
-        cell: ({ getValue }) => (
-          <span className="text-sm font-semibold text-emerald-600">
-            {formatCurrency(getValue<number>())}
-          </span>
-        ),
-      },
-      {
-        header: 'Bookings',
-        accessorKey: 'bookingCount',
-        cell: ({ getValue }) => <span className="text-sm tabular-nums">{getValue<number>()}</span>,
-      },
-      {
-        header: 'Status',
-        accessorKey: 'status',
-        cell: ({ getValue }) => (
-          <PayoutStatusBadge status={getValue<PayoutHistoryItem['status']>()} />
-        ),
-      },
-      {
-        header: 'Note',
-        accessorKey: 'note',
-        cell: ({ getValue }) => (
-          <span className="text-xs text-muted-foreground">{getValue<string>() || '—'}</span>
-        ),
-      },
-      {
-        header: 'Sent On',
-        accessorKey: 'sentAt',
-        cell: ({ getValue }) => (
-          <span className="text-xs text-muted-foreground">
-            {new Date(getValue<string>()).toLocaleDateString('en-IN', {
-              day: '2-digit',
-              month: 'short',
-              year: 'numeric',
-            })}
-          </span>
-        ),
-      },
-      {
-        header: 'Dispute Reason',
-        accessorKey: 'disputeReason',
-        cell: ({ getValue }) => (
-          <span className="text-xs text-red-600 max-w-[160px] line-clamp-2">
-            {getValue<string>() || '—'}
-          </span>
-        ),
-      },
-    ],
-    []
-  );
-
-  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
-    data: data?.payouts || [],
-    columns: cols,
+    data: data?.payouts ?? [],
+    columns,
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
-    pageCount: data?.totalPages || -1,
-    onPaginationChange: setPagination,
-    state: { pagination },
+    pageCount: data?.totalPages ?? -1,
   });
 
   if (!mounted) return null;
 
-  const handleStatusChange = (value: string) => {
-    setFilter((prev) => ({ ...prev, status: value === 'ALL' ? undefined : value, page: 1 }));
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-  };
+  const statCards = [
+    {
+      label: 'Amount Owed',
+      value: dashLoading ? '—' : fmt(dashboard?.owedAmount ?? 0),
+      icon: IndianRupee,
+      bg: 'bg-rose-50',
+      iconClass: 'text-rose-600',
+      border: 'border-rose-100',
+      highlight: true,
+    },
+    {
+      label: 'Total Commission',
+      value: dashLoading ? '—' : fmt(dashboard?.totalCommission ?? 0),
+      icon: TrendingUp,
+      bg: 'bg-blue-50',
+      iconClass: 'text-blue-600',
+      border: 'border-blue-100',
+      highlight: false,
+    },
+    {
+      label: 'Total Paid Out',
+      value: dashLoading ? '—' : fmt(dashboard?.totalPaid ?? 0),
+      icon: CheckCircle2,
+      bg: 'bg-emerald-50',
+      iconClass: 'text-emerald-600',
+      border: 'border-emerald-100',
+      highlight: false,
+    },
+    {
+      label: 'Last Payout',
+      value: dashLoading ? '—' : fmtDate(dashboard?.lastPayoutDate ?? null),
+      icon: Calendar,
+      bg: 'bg-violet-50',
+      iconClass: 'text-violet-600',
+      border: 'border-violet-100',
+      highlight: false,
+    },
+  ];
 
   return (
-    <div className="space-y-4">
-      {/* Summary cards */}
-      <div className="grid grid-cols-3 gap-3">
-        {[
-          {
-            label: 'Pending Verification',
-            value: pendingCount,
-            icon: Clock,
-            color: 'text-amber-600',
-            bg: 'bg-amber-50',
-            border: 'border-amber-100',
-          },
-          {
-            label: 'Confirmed',
-            value: confirmedCount,
-            icon: CheckCircle2,
-            color: 'text-emerald-600',
-            bg: 'bg-emerald-50',
-            border: 'border-emerald-100',
-          },
-          {
-            label: 'Disputed',
-            value: disputedCount,
-            icon: AlertTriangle,
-            color: 'text-red-600',
-            bg: 'bg-red-50',
-            border: 'border-red-100',
-          },
-        ].map((card) => (
+    <div className="space-y-6">
+      {/* Dashboard stat cards */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        {statCards.map((card) => (
           <div
             key={card.label}
-            className={`flex items-center gap-3 rounded-xl border bg-card p-4 shadow-sm ${card.border}`}
+            className={cn(
+              'flex items-center gap-4 rounded-xl border bg-card p-5 shadow-sm',
+              card.border,
+              card.highlight && 'ring-1 ring-rose-200'
+            )}
           >
-            <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${card.bg}`}>
-              <card.icon className={`h-4 w-4 ${card.color}`} />
+            <div
+              className={cn(
+                'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl',
+                card.bg
+              )}
+            >
+              <card.icon className={cn('h-5 w-5', card.iconClass)} />
             </div>
-            <div>
-              <p className="text-xs text-muted-foreground">{card.label}</p>
-              <p className="text-xl font-bold text-foreground">{isLoading ? '—' : card.value}</p>
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground truncate">{card.label}</p>
+              <p className="text-xl font-bold text-foreground tabular-nums mt-0.5">{card.value}</p>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Filter bar + Send Payout button */}
-      <div className="flex items-center justify-between gap-2 rounded-xl border border-border/60 bg-card px-4 py-3 shadow-sm">
-        <Select value={filter.status || 'ALL'} onValueChange={handleStatusChange}>
-          <SelectTrigger className="w-[180px] h-10 text-sm border-border/60 bg-muted/30">
-            <SelectValue placeholder="All Status" />
+      {/* Header row: filter + send payout button */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Select
+          value={filter.status ?? 'ALL'}
+          onValueChange={(v) =>
+            setFilter((f) => ({
+              ...f,
+              status: v === 'ALL' ? undefined : (v as PayoutStatus),
+              page: 1,
+            }))
+          }
+        >
+          <SelectTrigger className="h-9 w-40 text-sm border-border/60">
+            <SelectValue placeholder="All statuses" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="ALL" className="text-sm">
-              All Status
-            </SelectItem>
-            <SelectItem value="PENDING" className="text-sm">
-              Pending
-            </SelectItem>
-            <SelectItem value="CONFIRMED" className="text-sm">
-              Confirmed
-            </SelectItem>
-            <SelectItem value="DISPUTED" className="text-sm">
-              Disputed
-            </SelectItem>
+            <SelectItem value="ALL">All statuses</SelectItem>
+            <SelectItem value="PENDING">Pending</SelectItem>
+            <SelectItem value="ACCEPTED">Accepted</SelectItem>
+            <SelectItem value="REJECTED">Rejected</SelectItem>
           </SelectContent>
         </Select>
 
-        <Button
-          size="sm"
-          className="gap-2 bg-black text-white hover:bg-black/90"
-          onClick={() => setSendDialogOpen(true)}
+        <AlertDialog
+          open={isAlertOpen}
+          onOpenChange={(open) => {
+            if (!open) createMutation.reset();
+            setIsAlertOpen(open);
+          }}
         >
-          <Send className="h-4 w-4" />
-          Send Payout
-        </Button>
+          <AlertDialogTrigger asChild>
+            <Button
+              className="gap-2 bg-black text-white hover:bg-black/90"
+              disabled={!dashboard?.owedAmount || dashboard.owedAmount <= 0}
+            >
+              <Send className="h-4 w-4" />
+              Send Payout
+              {dashboard?.owedAmount ? ` (${fmt(dashboard.owedAmount)})` : ''}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirm Payout</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will create a payout of{' '}
+                <span className="font-semibold text-foreground">
+                  {fmt(dashboard?.owedAmount ?? 0)}
+                </span>{' '}
+                to the association admin. The association admin will be notified and must confirm
+                receipt. Are you sure you want to proceed?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+
+            {createMutation.isError && (
+              <div className="rounded-md bg-rose-50 p-3 text-sm text-rose-600 border border-rose-100 flex items-start gap-2 mt-2">
+                <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                <p>
+                  {createMutation.error instanceof Error
+                    ? createMutation.error.message
+                    : 'Failed to send payout'}
+                </p>
+              </div>
+            )}
+
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <Button
+                disabled={createMutation.isPending}
+                onClick={() => {
+                  createMutation.mutate(undefined, {
+                    onSuccess: () => {
+                      setIsAlertOpen(false);
+                    },
+                  });
+                }}
+                className="bg-black hover:bg-black/90"
+              >
+                {createMutation.isPending ? 'Processing…' : 'Yes, Send Payout'}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
-      {/* Table */}
+      {/* Payout history table */}
       <div className="rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader className="bg-muted/40">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id} className="hover:bg-transparent border-border/40">
-                  {headerGroup.headers.map((header) => (
+              {table.getHeaderGroups().map((hg) => (
+                <TableRow key={hg.id} className="hover:bg-transparent border-border/40">
+                  {hg.headers.map((h) => (
                     <TableHead
-                      key={header.id}
+                      key={h.id}
                       className="h-10 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
                     >
-                      {header.isPlaceholder
+                      {h.isPlaceholder
                         ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
+                        : flexRender(h.column.columnDef.header, h.getContext())}
                     </TableHead>
                   ))}
                 </TableRow>
@@ -346,11 +336,13 @@ export function PayoutRequestsTable() {
             </TableHeader>
             <TableBody className="text-sm">
               {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} cols={cols.length} />)
+                Array.from({ length: 5 }).map((_, i) => (
+                  <SkeletonRow key={i} cols={columns.length} />
+                ))
               ) : isError ? (
                 <TableRow>
-                  <TableCell colSpan={cols.length} className="h-32 text-center text-red-500">
-                    Failed to load payout history. Please try refreshing.
+                  <TableCell colSpan={columns.length} className="h-32 text-center text-rose-500">
+                    Failed to load payout history. Please try again.
                   </TableCell>
                 </TableRow>
               ) : table.getRowModel().rows.length ? (
@@ -369,10 +361,10 @@ export function PayoutRequestsTable() {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={cols.length}
+                    colSpan={columns.length}
                     className="h-32 text-center text-muted-foreground"
                   >
-                    No payouts sent yet.
+                    No payout records yet.
                   </TableCell>
                 </TableRow>
               )}
@@ -380,48 +372,35 @@ export function PayoutRequestsTable() {
           </Table>
         </div>
 
-        {/* Pagination */}
         <div className="flex items-center justify-between border-t border-border/40 bg-muted/20 px-4 py-3">
           <p className="text-xs text-muted-foreground">
-            Showing{' '}
-            <span className="font-medium text-foreground">
-              {data?.total === 0
-                ? 0
-                : table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}
-            </span>{' '}
-            to{' '}
-            <span className="font-medium text-foreground">
-              {Math.min(
-                (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
-                data?.total ?? 0
-              )}
-            </span>{' '}
-            of <span className="font-medium text-foreground">{data?.total ?? 0}</span> payouts
+            Page <span className="font-medium text-foreground">{filter.page}</span> of{' '}
+            <span className="font-medium text-foreground">{data?.totalPages ?? '—'}</span>
+            {' · '}
+            <span className="font-medium text-foreground">{data?.total ?? 0}</span> total
           </p>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
-              className="h-8 border-border/60"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
+              className="h-8 gap-1"
+              disabled={(filter.page ?? 1) <= 1}
+              onClick={() => setFilter((f) => ({ ...f, page: (f.page ?? 1) - 1 }))}
             >
-              Previous
+              <ChevronLeft className="h-3.5 w-3.5" /> Prev
             </Button>
             <Button
               variant="outline"
               size="sm"
-              className="h-8 border-border/60"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
+              className="h-8 gap-1"
+              disabled={(filter.page ?? 1) >= (data?.totalPages ?? 1)}
+              onClick={() => setFilter((f) => ({ ...f, page: (f.page ?? 1) + 1 }))}
             >
-              Next
+              Next <ChevronRight className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>
       </div>
-
-      <SendPayoutDialog open={sendDialogOpen} onOpenChange={setSendDialogOpen} />
     </div>
   );
 }

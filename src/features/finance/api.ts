@@ -1,285 +1,161 @@
+import apiClient from '@/lib/axios';
+import { ApiResponse } from '@/types/api';
 import {
-  RevenueOverview,
-  RevenueReportsFilter,
-  RevenueReportsResponse,
-  RefundsFilter,
-  RefundsResponse,
-  AssociationRevenueFilter,
-  AssociationRevenueResponse,
-  PayoutEarningSummary,
-  PayoutHistoryItem,
-  PayoutHistoryFilter,
-  PayoutHistoryResponse,
-  SendPayoutInput,
-  VerifyPayoutInput,
-  AssociationAdminEarning,
+  FinanceSummaryDto,
+  RevenueChartPoint,
+  VendorRevenueTableFilter,
+  VendorRevenueTableResponse,
+  FinancePeriod,
+  PayoutDashboardDto,
+  PayoutItemDto,
+  PayoutListResponse,
+  PayoutAssocSummaryDto,
+  PayoutListFilter,
+  RefundHistoryFilter,
+  RefundHistoryResponse,
+  AssocFinanceSummaryDto,
 } from './types';
 
-// --- Dummy data generators ---
+// ─── Finance API ─────────────────────────────────────────────────────────────
 
-const generateDummyRevenueOverview = (): RevenueOverview => ({
-  today: 1200,
-  thisWeek: 8750,
-  thisMonth: 34200,
-  total: 512000,
-});
+export const fetchFinanceSummary = async (): Promise<FinanceSummaryDto> => {
+  const res = await apiClient.get<ApiResponse<FinanceSummaryDto>>('/admin/finance/stats');
+  return res.data.data!;
+};
 
-const generateDummyRevenueReports = (): RevenueReportsResponse['reports'] => {
-  return Array.from({ length: 20 }).map((_, i) => {
-    const date = new Date(Date.now() - i * 86400000);
-    return {
-      date: date.toISOString().split('T')[0],
-      bookings: Math.floor(Math.random() * 15) + 1,
-      amount: (Math.floor(Math.random() * 15) + 1) * 150,
-      vendorId: `v-${(i % 5) + 1}`,
-      vendorName: `Vendor ${(i % 5) + 1}`,
-    };
+export const fetchRevenueChart = async (
+  period: FinancePeriod = 'month',
+  from?: string,
+  to?: string
+): Promise<RevenueChartPoint[]> => {
+  const params: Record<string, string> = { period };
+  if (period === 'custom' && from && to) {
+    params.from = from;
+    params.to = to;
+  }
+  const res = await apiClient.get<ApiResponse<RevenueChartPoint[]>>('/admin/finance/chart', {
+    params,
   });
+  return res.data.data!;
 };
 
-const generateDummyRefunds = () => {
-  const types = ['WALLET', 'ORIGINAL'] as const;
-  const statuses = ['COMPLETED', 'PENDING', 'FAILED'] as const;
-
-  return Array.from({ length: 18 }).map((_, i) => ({
-    id: `ref-${i + 1}`,
-    bookingId: `bk-${i + 1}`,
-    bookingNumber: `FLB${1000 + i}`,
-    user: {
-      id: `u-${i}`,
-      name: `Customer ${i + 1}`,
-      phone: `+91 9000000${String(i).padStart(3, '0')}`,
-    },
-    amount: [10, 50, 100, 150][i % 4],
-    type: types[i % 2],
-    status: statuses[i % 3],
-    reason: i % 2 === 0 ? 'User requested cancellation' : 'Vendor cancelled the appointment',
-    createdAt: new Date(Date.now() - i * 86400000).toISOString(),
-    processedAt:
-      statuses[i % 3] === 'COMPLETED'
-        ? new Date(Date.now() - i * 86400000 + 3600000).toISOString()
-        : undefined,
-  }));
-};
-
-const generateDummyAssociationRevenue = () => {
-  return Array.from({ length: 8 }).map((_, i) => ({
-    vendorId: `v-${i + 1}`,
-    vendorName: `Owner Name ${i + 1}`,
-    shopName: `Quality Barbers ${i + 1}`,
-    bookings: Math.floor(Math.random() * 40) + 5,
-    revenue: (Math.floor(Math.random() * 40) + 5) * 150,
-  }));
-};
-
-// --- API Functions ---
-
-export const getRevenueOverview = async (): Promise<RevenueOverview> => {
-  await new Promise((resolve) => setTimeout(resolve, 600));
-  return generateDummyRevenueOverview();
-};
-
-export const getRevenueReports = async (
-  filters: RevenueReportsFilter
-): Promise<RevenueReportsResponse> => {
-  await new Promise((resolve) => setTimeout(resolve, 800));
-
-  let reports = generateDummyRevenueReports();
-
-  if (filters.startDate) {
-    reports = reports.filter((r) => r.date >= filters.startDate!);
-  }
-  if (filters.endDate) {
-    reports = reports.filter((r) => r.date <= filters.endDate!);
-  }
-  if (filters.vendorId) {
-    reports = reports.filter((r) => r.vendorId === filters.vendorId);
-  }
-
-  const page = filters.page || 1;
-  const limit = filters.limit || 10;
-  const start = (page - 1) * limit;
-  const totalAmount = reports.reduce((sum, r) => sum + r.amount, 0);
-  const paginated = reports.slice(start, start + limit);
-
-  return {
-    reports: paginated,
-    total: reports.length,
-    page,
-    limit,
-    totalPages: Math.ceil(reports.length / limit),
-    totalAmount,
+export const fetchVendorRevenueTable = async (
+  filter: VendorRevenueTableFilter
+): Promise<VendorRevenueTableResponse> => {
+  const params: Record<string, string | number> = {
+    period: filter.period ?? 'month',
+    page: filter.page ?? 1,
+    limit: filter.limit ?? 10,
+    sortOrder: filter.sortOrder ?? 'desc',
   };
+  if (filter.period === 'custom' && filter.from && filter.to) {
+    params.from = filter.from;
+    params.to = filter.to;
+  }
+  if (filter.search) params.search = filter.search;
+  if (filter.minRevenue !== undefined) params.minRevenue = filter.minRevenue;
+  if (filter.maxRevenue !== undefined) params.maxRevenue = filter.maxRevenue;
+
+  const res = await apiClient.get<ApiResponse<VendorRevenueTableResponse>>(
+    '/admin/finance/vendors',
+    { params }
+  );
+  return res.data.data!;
 };
 
-export const getRefunds = async (filters: RefundsFilter): Promise<RefundsResponse> => {
-  await new Promise((resolve) => setTimeout(resolve, 700));
+// ─── Payout API ───────────────────────────────────────────────────────────────
 
-  let refunds = generateDummyRefunds();
+/** Super Admin: dashboard totals */
+export const fetchPayoutDashboard = async (): Promise<PayoutDashboardDto> => {
+  const res = await apiClient.get<ApiResponse<PayoutDashboardDto>>('/admin/payout/dashboard');
+  return res.data.data!;
+};
 
-  if (filters.type && filters.type !== 'ALL') {
-    refunds = refunds.filter((r) => r.type === filters.type);
-  }
-  if (filters.status && filters.status !== 'ALL') {
-    refunds = refunds.filter((r) => r.status === filters.status);
-  }
+/** Super Admin: trigger a new payout to the association admin */
+export const createPayout = async (): Promise<PayoutItemDto> => {
+  const res = await apiClient.post<ApiResponse<PayoutItemDto>>('/admin/payout');
+  return res.data.data!;
+};
 
-  const page = filters.page || 1;
-  const limit = filters.limit || 10;
-  const start = (page - 1) * limit;
-  const paginated = refunds.slice(start, start + limit);
-
-  return {
-    refunds: paginated,
-    total: refunds.length,
-    page,
-    limit,
-    totalPages: Math.ceil(refunds.length / limit),
+/** Super Admin + Association Admin: list payouts */
+export const fetchPayouts = async (filter: PayoutListFilter): Promise<PayoutListResponse> => {
+  const params: Record<string, string | number> = {
+    page: filter.page ?? 1,
+    limit: filter.limit ?? 10,
   };
+  if (filter.status) params.status = filter.status;
+  const res = await apiClient.get<ApiResponse<PayoutListResponse>>('/admin/payout', { params });
+  return res.data.data!;
 };
 
-// --- Payout dummy data ---
+/** Association Admin: get their own pending amount & booking count */
+export const fetchAssocPayoutSummary = async (): Promise<PayoutAssocSummaryDto> => {
+  const res = await apiClient.get<ApiResponse<PayoutAssocSummaryDto>>('/admin/payout/summary');
+  return res.data.data!;
+};
 
-const ASSOC_ADMINS = [
-  { id: 'aa-1', name: 'Ravi Kumar' },
-  { id: 'aa-2', name: 'Sunita Devi' },
-  { id: 'aa-3', name: 'Mohammed Ali' },
-];
+/** Association Admin: accept a received payout */
+export const acceptPayout = async (id: string): Promise<PayoutItemDto> => {
+  const res = await apiClient.put<ApiResponse<PayoutItemDto>>(`/admin/payout/${id}/accept`);
+  return res.data.data!;
+};
 
-const generateDummyPayoutHistory = (): PayoutHistoryItem[] => {
-  const statuses: PayoutHistoryItem['status'][] = ['PENDING', 'CONFIRMED', 'DISPUTED'];
-  return Array.from({ length: 15 }).map((_, i) => {
-    const admin = ASSOC_ADMINS[i % 3];
-    const status = statuses[i % 3];
-    const bookingCount = Math.floor(Math.random() * 50) + 10;
-    return {
-      id: `payout-${i + 1}`,
-      associationAdminId: admin.id,
-      associationAdminName: admin.name,
-      amount: bookingCount * 2,
-      bookingCount,
-      sentAt: new Date(Date.now() - i * 86400000 * 3).toISOString(),
-      verifiedAt:
-        status !== 'PENDING' ? new Date(Date.now() - i * 86400000 * 2).toISOString() : undefined,
-      status,
-      note: i % 3 === 0 ? 'Monthly payout' : undefined,
-      disputeReason: status === 'DISPUTED' ? 'Amount not received in bank account.' : undefined,
-    };
+/** Association Admin: reject a payout with a reason */
+export const rejectPayout = async (id: string, rejectionReason: string): Promise<PayoutItemDto> => {
+  const res = await apiClient.put<ApiResponse<PayoutItemDto>>(`/admin/payout/${id}/reject`, {
+    rejectionReason,
   });
+  return res.data.data!;
 };
 
-// Association admin's own earnings summary
-export const getPayoutEarningSummary = async (): Promise<PayoutEarningSummary> => {
-  await new Promise((resolve) => setTimeout(resolve, 600));
-  return {
-    totalEarned: 1240,
-    totalConfirmed: 600,
-    pendingVerification: 200,
-    disputed: 40,
-    totalBookings: 620,
+// ─── Association Finance API ──────────────────────────────────────────────────
+
+export const fetchAssocFinanceSummary = async (): Promise<AssocFinanceSummaryDto> => {
+  const res = await apiClient.get<ApiResponse<AssocFinanceSummaryDto>>(
+    '/admin/finance/assoc/stats'
+  );
+  return res.data.data!;
+};
+
+export const fetchAssocVendorRevenueTable = async (
+  filter: VendorRevenueTableFilter
+): Promise<VendorRevenueTableResponse> => {
+  const params: Record<string, string | number> = {
+    period: filter.period ?? 'month',
+    page: filter.page ?? 1,
+    limit: filter.limit ?? 10,
+    sortOrder: filter.sortOrder ?? 'desc',
   };
-};
-
-// Shared: super admin sees all, association admin sees only their own
-export const getPayoutHistory = async (
-  filters: PayoutHistoryFilter
-): Promise<PayoutHistoryResponse> => {
-  await new Promise((resolve) => setTimeout(resolve, 700));
-
-  let payouts = generateDummyPayoutHistory();
-
-  if (filters.status && filters.status !== 'ALL') {
-    payouts = payouts.filter((p) => p.status === filters.status);
+  if (filter.period === 'custom' && filter.from && filter.to) {
+    params.from = filter.from;
+    params.to = filter.to;
   }
-  if (filters.associationAdminId) {
-    payouts = payouts.filter((p) => p.associationAdminId === filters.associationAdminId);
-  }
+  if (filter.search) params.search = filter.search;
+  if (filter.minRevenue !== undefined) params.minRevenue = filter.minRevenue;
+  if (filter.maxRevenue !== undefined) params.maxRevenue = filter.maxRevenue;
 
-  const page = filters.page || 1;
-  const limit = filters.limit || 10;
-  const start = (page - 1) * limit;
-  const paginated = payouts.slice(start, start + limit);
-
-  return {
-    payouts: paginated,
-    total: payouts.length,
-    page,
-    limit,
-    totalPages: Math.ceil(payouts.length / limit),
-  };
+  const res = await apiClient.get<ApiResponse<VendorRevenueTableResponse>>(
+    '/admin/finance/assoc/vendors',
+    { params }
+  );
+  return res.data.data!;
 };
 
-// Super admin sends payout to an association admin
-export const sendPayout = async (input: SendPayoutInput): Promise<PayoutHistoryItem> => {
-  await new Promise((resolve) => setTimeout(resolve, 800));
-  return {
-    id: `payout-new-${Date.now()}`,
-    associationAdminId: 'aa-system',
-    associationAdminName: 'Association Admin',
-    amount: input.amount,
-    bookingCount: Math.floor(input.amount / 2),
-    sentAt: new Date().toISOString(),
-    status: 'PENDING',
-    note: input.note,
-  };
-};
+// ─── Refund API ───────────────────────────────────────────────────────────────
 
-// Association admin verifies receipt (CONFIRMED) or disputes (DISPUTED)
-export const verifyPayout = async (
-  id: string,
-  input: VerifyPayoutInput
-): Promise<PayoutHistoryItem> => {
-  await new Promise((resolve) => setTimeout(resolve, 600));
-  return {
-    id,
-    associationAdminId: 'aa-current',
-    associationAdminName: 'Current Association Admin',
-    amount: 100,
-    bookingCount: 50,
-    sentAt: new Date(Date.now() - 86400000).toISOString(),
-    verifiedAt: new Date().toISOString(),
-    status: input.status,
-    disputeReason: input.disputeReason,
+export const fetchRefundHistory = async (
+  filter: RefundHistoryFilter
+): Promise<RefundHistoryResponse> => {
+  const params: Record<string, string | number> = {
+    page: filter.page ?? 1,
+    limit: filter.limit ?? 10,
   };
-};
+  if (filter.type) params.type = filter.type;
+  if (filter.from) params.from = filter.from;
+  if (filter.to) params.to = filter.to;
 
-// Super admin: per-association-admin earnings overview (to know who to pay)
-export const getAssociationAdminEarnings = async (): Promise<AssociationAdminEarning[]> => {
-  await new Promise((resolve) => setTimeout(resolve, 700));
-  return ASSOC_ADMINS.map((admin, i) => {
-    const totalBookings = (i + 1) * 80 + 40;
-    const totalEarned = totalBookings * 2;
-    const totalPaid = Math.floor(totalEarned * 0.6);
-    return {
-      associationAdminId: admin.id,
-      associationAdminName: admin.name,
-      totalBookings,
-      totalEarned,
-      totalPaid,
-      pendingAmount: totalEarned - totalPaid,
-    };
+  const res = await apiClient.get<ApiResponse<RefundHistoryResponse>>('/admin/finance/refunds', {
+    params,
   });
-};
-
-export const getAssociationRevenue = async (
-  filters: AssociationRevenueFilter
-): Promise<AssociationRevenueResponse> => {
-  await new Promise((resolve) => setTimeout(resolve, 700));
-
-  const vendors = generateDummyAssociationRevenue();
-
-  const page = filters.page || 1;
-  const limit = filters.limit || 10;
-  const start = (page - 1) * limit;
-  const totalRevenue = vendors.reduce((sum, v) => v.revenue + sum, 0);
-  const paginated = vendors.slice(start, start + limit);
-
-  return {
-    vendors: paginated,
-    total: vendors.length,
-    page,
-    limit,
-    totalPages: Math.ceil(vendors.length / limit),
-    totalRevenue,
-  };
+  return res.data.data!;
 };

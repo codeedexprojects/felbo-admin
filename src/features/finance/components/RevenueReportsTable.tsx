@@ -2,17 +2,9 @@
 
 import React, { useState, useEffect, useMemo, ChangeEvent } from 'react';
 import { flexRender, getCoreRowModel, useReactTable, ColumnDef } from '@tanstack/react-table';
-import { Download } from 'lucide-react';
-
+import { Download, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -21,10 +13,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useRevenueReports } from '../hooks';
-import { useVendors } from '@/features/vendors/hooks';
-import { RevenueReportItem, RevenueReportsFilter } from '../types';
+import { useVendorRevenueTable } from '../hooks';
+import { VendorRevenueRow, VendorRevenueTableFilter, FinancePeriod } from '../types';
 import { useMounted } from '@/hooks/use-mounted';
+import { cn } from '@/lib/utils';
 
 function SkeletonRow({ cols }: { cols: number }) {
   return (
@@ -42,157 +34,246 @@ function formatCurrency(amount: number) {
   return `₹${amount.toLocaleString('en-IN')}`;
 }
 
-const columns: ColumnDef<RevenueReportItem>[] = [
-  {
-    header: 'Date',
-    accessorKey: 'date',
-    cell: ({ getValue }) => (
-      <span className="text-sm font-medium">
-        {new Date(getValue<string>()).toLocaleDateString('en-IN', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric',
-        })}
-      </span>
-    ),
-  },
-  {
-    header: 'Vendor',
-    accessorKey: 'vendorName',
-    cell: ({ getValue }) => (
-      <span className="text-sm text-muted-foreground">{getValue<string>() || '—'}</span>
-    ),
-  },
-  {
-    header: 'Bookings',
-    accessorKey: 'bookings',
-    cell: ({ getValue }) => (
-      <span className="text-sm font-medium tabular-nums">{getValue<number>()}</span>
-    ),
-  },
-  {
-    header: 'Amount',
-    accessorKey: 'amount',
-    cell: ({ getValue }) => (
-      <span className="text-sm font-semibold text-emerald-600">
-        {formatCurrency(getValue<number>())}
-      </span>
-    ),
-  },
-];
+function RegTypeBadge({ type }: { type: VendorRevenueRow['registrationType'] }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium',
+        type === 'ASSOCIATION'
+          ? 'bg-violet-50 text-violet-700 border border-violet-200'
+          : 'bg-blue-50 text-blue-700 border border-blue-200'
+      )}
+    >
+      {type === 'ASSOCIATION' ? 'Association' : 'Independent'}
+    </span>
+  );
+}
 
-function exportToCSV(reports: RevenueReportItem[]) {
-  const headers = ['Date', 'Vendor', 'Bookings', 'Amount'];
-  const rows = reports.map((r) => [r.date, r.vendorName || '', r.bookings, r.amount]);
+function exportToCSV(vendors: VendorRevenueRow[]) {
+  const headers = ['Vendor Name', 'Phone', 'Type', 'Shops', 'Bookings', 'Revenue'];
+  const rows = vendors.map((v) => [
+    v.vendorName,
+    v.vendorPhone,
+    v.registrationType,
+    v.shopCount,
+    v.bookingCount,
+    v.revenue,
+  ]);
   const csvContent = [headers, ...rows].map((row) => row.join(',')).join('\n');
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `revenue-report-${new Date().toISOString().split('T')[0]}.csv`;
+  link.download = `vendor-revenue-${new Date().toISOString().split('T')[0]}.csv`;
   link.click();
   URL.revokeObjectURL(url);
 }
 
+const PERIOD_OPTIONS: { label: string; value: FinancePeriod }[] = [
+  { label: 'Today', value: 'today' },
+  { label: 'This Week', value: 'week' },
+  { label: 'This Month', value: 'month' },
+  { label: 'Custom', value: 'custom' },
+];
+
 export function RevenueReportsTable() {
-  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
-  const [filter, setFilter] = useState<RevenueReportsFilter>({ page: 1, limit: 10 });
+  const [filter, setFilter] = useState<VendorRevenueTableFilter>({
+    period: 'month',
+    page: 1,
+    limit: 10,
+    sortOrder: 'desc',
+  });
+  const [search, setSearch] = useState('');
+  const [searchDebounced, setSearchDebounced] = useState('');
+
+  // Debounce search 400ms
+  useEffect(() => {
+    const t = setTimeout(() => setSearchDebounced(search), 400);
+    return () => clearTimeout(t);
+  }, [search]);
 
   useEffect(() => {
-    setFilter((prev) => ({ ...prev, page: pagination.pageIndex + 1, limit: pagination.pageSize }));
-  }, [pagination]);
+    setFilter((prev) => ({ ...prev, search: searchDebounced || undefined, page: 1 }));
+  }, [searchDebounced]);
 
-  const { data, isLoading, isError } = useRevenueReports(filter);
-  const vendorsQuery = useVendors({ page: 1, limit: 100 });
-  const vendors = vendorsQuery.data?.vendors || [];
+  const { data, isLoading, isError } = useVendorRevenueTable(filter);
   const mounted = useMounted();
 
-  const cols = useMemo(() => columns, []);
+  const columns: ColumnDef<VendorRevenueRow>[] = useMemo(
+    () => [
+      {
+        header: 'Vendor',
+        accessorKey: 'vendorName',
+        cell: ({ row }) => (
+          <div>
+            <p className="text-sm font-medium text-foreground">{row.original.vendorName}</p>
+            <p className="text-[11px] text-muted-foreground">{row.original.vendorPhone}</p>
+          </div>
+        ),
+      },
+      {
+        header: 'Type',
+        accessorKey: 'registrationType',
+        cell: ({ getValue }) => (
+          <RegTypeBadge type={getValue<VendorRevenueRow['registrationType']>()} />
+        ),
+      },
+      {
+        header: 'Shops',
+        accessorKey: 'shopCount',
+        cell: ({ getValue }) => <span className="text-sm tabular-nums">{getValue<number>()}</span>,
+      },
+      {
+        header: 'Bookings',
+        accessorKey: 'bookingCount',
+        cell: ({ getValue }) => (
+          <span className="text-sm font-medium tabular-nums">
+            {getValue<number>().toLocaleString('en-IN')}
+          </span>
+        ),
+      },
+      {
+        header: 'Revenue',
+        accessorKey: 'revenue',
+        cell: ({ getValue }) => (
+          <span className="text-sm font-semibold text-emerald-600 tabular-nums">
+            {formatCurrency(getValue<number>())}
+          </span>
+        ),
+      },
+    ],
+    []
+  );
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
-    data: data?.reports || [],
-    columns: cols,
+    data: data?.vendors || [],
+    columns,
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
     pageCount: data?.totalPages || -1,
-    onPaginationChange: setPagination,
-    state: { pagination },
+    state: {
+      pagination: {
+        pageIndex: (filter.page ?? 1) - 1,
+        pageSize: filter.limit ?? 10,
+      },
+    },
+    onPaginationChange: (updater) => {
+      const current = { pageIndex: (filter.page ?? 1) - 1, pageSize: filter.limit ?? 10 };
+      const next = typeof updater === 'function' ? updater(current) : updater;
+      setFilter((prev) => ({ ...prev, page: next.pageIndex + 1, limit: next.pageSize }));
+    },
   });
 
   if (!mounted) return null;
 
-  const handleVendorChange = (value: string) => {
-    setFilter((prev) => ({
-      ...prev,
-      vendorId: value === 'ALL' ? undefined : value,
-      page: 1,
-    }));
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  const handlePeriodChange = (value: FinancePeriod) => {
+    setFilter((prev) => ({ ...prev, period: value, page: 1, from: undefined, to: undefined }));
   };
 
-  const handleDateChange = (e: ChangeEvent<HTMLInputElement>, type: 'startDate' | 'endDate') => {
-    setFilter((prev) => ({ ...prev, [type]: e.target.value || undefined, page: 1 }));
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  const handleSortToggle = () => {
+    setFilter((prev) => ({
+      ...prev,
+      sortOrder: prev.sortOrder === 'asc' ? 'desc' : 'asc',
+      page: 1,
+    }));
   };
+
+  const handleDateChange = (e: ChangeEvent<HTMLInputElement>, key: 'from' | 'to') => {
+    setFilter((prev) => ({ ...prev, [key]: e.target.value || undefined, page: 1 }));
+  };
+
+  const handleMinMax = (e: ChangeEvent<HTMLInputElement>, key: 'minRevenue' | 'maxRevenue') => {
+    const val = e.target.value ? Number(e.target.value) : undefined;
+    setFilter((prev) => ({ ...prev, [key]: val, page: 1 }));
+  };
+
+  const SortIcon =
+    filter.sortOrder === 'asc' ? ArrowUp : filter.sortOrder === 'desc' ? ArrowDown : ArrowUpDown;
 
   return (
     <div className="space-y-4">
       {/* Filter bar */}
       <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/60 bg-card px-4 py-3 shadow-sm">
-        <Select
-          value={filter.vendorId || 'ALL'}
-          onValueChange={handleVendorChange}
-          disabled={vendorsQuery.isLoading}
-        >
-          <SelectTrigger className="w-[180px] h-10 text-sm border-border/60 bg-muted/30">
-            <SelectValue placeholder="All Vendors" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ALL" className="text-sm">
-              All Vendors
-            </SelectItem>
-            {vendors.map((v) => (
-              <SelectItem key={v.id} value={v.id} className="text-sm">
-                {v.ownerName}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {/* Search */}
+        <Input
+          placeholder="Search vendor name / phone…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="h-10 w-[220px] text-sm border-border/60 bg-muted/30"
+        />
 
-        <div className="flex items-center gap-2">
+        {/* Period selector */}
+        <div className="flex items-center gap-1 rounded-lg border border-border/60 bg-muted/40 p-1">
+          {PERIOD_OPTIONS.map((p) => (
+            <button
+              key={p.value}
+              onClick={() => handlePeriodChange(p.value)}
+              className={
+                filter.period === p.value
+                  ? 'rounded-md bg-background px-3 py-1.5 text-xs font-semibold text-foreground shadow-sm border border-border/60 transition-all'
+                  : 'rounded-md px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors'
+              }
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Custom date pickers */}
+        {filter.period === 'custom' && (
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={filter.from || ''}
+              onChange={(e) => handleDateChange(e, 'from')}
+              className="h-10 rounded-md border border-border/60 bg-muted/30 px-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+            <span className="text-muted-foreground text-sm">–</span>
+            <input
+              type="date"
+              value={filter.to || ''}
+              onChange={(e) => handleDateChange(e, 'to')}
+              className="h-10 rounded-md border border-border/60 bg-muted/30 px-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+          </div>
+        )}
+
+        {/* Revenue range */}
+        <div className="flex items-center gap-1">
           <Input
-            type="date"
-            className="h-10 text-sm w-[140px] border-border/60 bg-muted/30"
-            value={filter.startDate || ''}
-            onChange={(e) => handleDateChange(e, 'startDate')}
-            title="Start Date"
+            type="number"
+            placeholder="Min ₹"
+            className="h-10 w-[90px] text-sm border-border/60 bg-muted/30"
+            onChange={(e) => handleMinMax(e, 'minRevenue')}
           />
-          <span className="text-sm text-muted-foreground">–</span>
           <Input
-            type="date"
-            className="h-10 text-sm w-[140px] border-border/60 bg-muted/30"
-            value={filter.endDate || ''}
-            onChange={(e) => handleDateChange(e, 'endDate')}
-            title="End Date"
+            type="number"
+            placeholder="Max ₹"
+            className="h-10 w-[90px] text-sm border-border/60 bg-muted/30"
+            onChange={(e) => handleMinMax(e, 'maxRevenue')}
           />
         </div>
 
-        <div className="ml-auto flex items-center gap-3">
-          {data && (
-            <span className="text-sm text-muted-foreground">
-              Total:{' '}
-              <span className="font-semibold text-foreground">
-                {formatCurrency(data.totalAmount)}
-              </span>
-            </span>
-          )}
+        <div className="ml-auto flex items-center gap-2">
+          {/* Sort toggle */}
           <Button
             variant="outline"
             size="sm"
             className="h-10 gap-2 border-border/60"
-            onClick={() => data && exportToCSV(data.reports)}
-            disabled={!data?.reports.length}
+            onClick={handleSortToggle}
+          >
+            <SortIcon className="h-4 w-4" />
+            Revenue {filter.sortOrder === 'asc' ? 'Asc' : 'Desc'}
+          </Button>
+
+          {/* Export */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-10 gap-2 border-border/60"
+            onClick={() => data && exportToCSV(data.vendors)}
+            disabled={!data?.vendors.length}
           >
             <Download className="h-4 w-4" />
             Export CSV
@@ -222,11 +303,13 @@ export function RevenueReportsTable() {
             </TableHeader>
             <TableBody className="text-sm">
               {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} cols={cols.length} />)
+                Array.from({ length: 5 }).map((_, i) => (
+                  <SkeletonRow key={i} cols={columns.length} />
+                ))
               ) : isError ? (
                 <TableRow>
-                  <TableCell colSpan={cols.length} className="h-32 text-center text-red-500">
-                    Failed to load revenue reports. Please try refreshing.
+                  <TableCell colSpan={columns.length} className="h-32 text-center text-red-500">
+                    Failed to load vendor revenue data. Please try refreshing.
                   </TableCell>
                 </TableRow>
               ) : table.getRowModel().rows.length ? (
@@ -245,10 +328,10 @@ export function RevenueReportsTable() {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={cols.length}
+                    colSpan={columns.length}
                     className="h-32 text-center text-muted-foreground"
                   >
-                    No revenue reports found for the selected filters.
+                    No vendor revenue data found for the selected filters.
                   </TableCell>
                 </TableRow>
               )}
@@ -261,18 +344,13 @@ export function RevenueReportsTable() {
           <p className="text-xs text-muted-foreground">
             Showing{' '}
             <span className="font-medium text-foreground">
-              {data?.total === 0
-                ? 0
-                : table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}
+              {data?.total === 0 ? 0 : ((filter.page ?? 1) - 1) * (filter.limit ?? 10) + 1}
             </span>{' '}
             to{' '}
             <span className="font-medium text-foreground">
-              {Math.min(
-                (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
-                data?.total ?? 0
-              )}
+              {Math.min((filter.page ?? 1) * (filter.limit ?? 10), data?.total ?? 0)}
             </span>{' '}
-            of <span className="font-medium text-foreground">{data?.total ?? 0}</span> records
+            of <span className="font-medium text-foreground">{data?.total ?? 0}</span> vendors
           </p>
           <div className="flex items-center space-x-2">
             <Button

@@ -1,152 +1,149 @@
-// Revenue Overview
-export interface RevenueOverview {
-  today: number;
-  thisWeek: number;
+// Finance feature types — aligned to backend DTOs
+
+export interface FinanceSummaryPeriodDto {
+  revenue: number;
+  bookingCount: number;
+}
+
+export interface RefundStatsDto {
+  total: number;
   thisMonth: number;
-  total: number;
 }
 
-// Revenue Reports
-export interface RevenueReportItem {
-  date: string;
-  bookings: number;
-  amount: number;
-  vendorId?: string;
-  vendorName?: string;
+export interface FinanceSummaryDto {
+  today: FinanceSummaryPeriodDto;
+  thisWeek: FinanceSummaryPeriodDto;
+  thisMonth: FinanceSummaryPeriodDto;
+  total: FinanceSummaryPeriodDto;
+  associationCommission: number;
+  refundStats: RefundStatsDto;
 }
 
-export interface RevenueReportsResponse {
-  reports: RevenueReportItem[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-  totalAmount: number;
+export interface RevenueChartPoint {
+  date: string; // 'YYYY-MM-DD'
+  revenue: number;
+  bookingCount: number;
 }
 
-export interface RevenueReportsFilter {
-  page?: number;
-  limit?: number;
-  startDate?: string;
-  endDate?: string;
-  vendorId?: string;
-}
+export type RegistrationType = 'ASSOCIATION' | 'INDEPENDENT';
 
-// Refunds
-export type RefundType = 'WALLET' | 'ORIGINAL';
-export type RefundStatus = 'COMPLETED' | 'PENDING' | 'FAILED';
-
-export interface RefundItem {
-  id: string;
-  bookingId: string;
-  bookingNumber: string;
-  user: { id: string; name: string; phone: string };
-  amount: number;
-  type: RefundType;
-  status: RefundStatus;
-  reason?: string;
-  createdAt: string;
-  processedAt?: string;
-}
-
-export interface RefundsResponse {
-  refunds: RefundItem[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
-export interface RefundsFilter {
-  page?: number;
-  limit?: number;
-  type?: string;
-  status?: string;
-}
-
-// Association Revenue
-export interface AssociationRevenueItem {
+export interface VendorRevenueRow {
   vendorId: string;
   vendorName: string;
-  shopName: string;
-  bookings: number;
+  vendorPhone: string;
+  registrationType: RegistrationType;
+  shopCount: number;
+  bookingCount: number;
   revenue: number;
 }
 
-export interface AssociationRevenueResponse {
-  vendors: AssociationRevenueItem[];
+export interface VendorRevenueTableResponse {
+  vendors: VendorRevenueRow[];
   total: number;
   page: number;
   limit: number;
   totalPages: number;
-  totalRevenue: number;
 }
 
-export interface AssociationRevenueFilter {
+export type FinancePeriod = 'today' | 'week' | 'month' | 'custom';
+
+export interface VendorRevenueTableFilter {
+  period?: FinancePeriod;
+  from?: string;
+  to?: string;
+  search?: string;
+  sortOrder?: 'asc' | 'desc';
+  minRevenue?: number;
+  maxRevenue?: number;
   page?: number;
   limit?: number;
-  startDate?: string;
-  endDate?: string;
 }
 
-// Payouts
-// PENDING  → super admin sent, waiting for association admin to verify
-// CONFIRMED → association admin confirmed the amount was received
-// DISPUTED  → association admin says the amount was NOT received
-export type PayoutStatus = 'PENDING' | 'CONFIRMED' | 'DISPUTED';
+// ─── Payout types (backend DTOs) ────────────────────────────────────────────
 
-export interface PayoutEarningSummary {
-  totalEarned: number;
-  totalConfirmed: number;
-  pendingVerification: number;
-  disputed: number;
-  totalBookings: number;
-}
+export type PayoutStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED';
 
-export interface PayoutHistoryItem {
+export interface PayoutItemDto {
   id: string;
-  associationAdminId: string;
-  associationAdminName: string;
   amount: number;
   bookingCount: number;
-  sentAt: string;
-  verifiedAt?: string;
   status: PayoutStatus;
-  note?: string;
-  disputeReason?: string;
+  requestedBy: string;
+  processedBy: string | null;
+  rejectionReason: string | null;
+  processedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface PayoutHistoryResponse {
-  payouts: PayoutHistoryItem[];
+export interface PayoutListResponse {
+  payouts: PayoutItemDto[];
   total: number;
   page: number;
   limit: number;
   totalPages: number;
 }
 
-export interface PayoutHistoryFilter {
+/** Super Admin dashboard: how much is owed, totals */
+export interface PayoutDashboardDto {
+  owedAmount: number;
+  totalCommission: number;
+  totalPaid: number;
+  bookingCount: number;
+  lastPayoutDate: string | null;
+}
+
+/** Association Admin: pending amount + booking count for them */
+export interface PayoutAssocSummaryDto {
+  pendingAmount: number;
+  bookingCount: number;
+}
+
+export interface PayoutListFilter {
+  status?: PayoutStatus;
   page?: number;
   limit?: number;
-  status?: string;
-  associationAdminId?: string;
 }
 
-export interface SendPayoutInput {
+// ─── Refund types ────────────────────────────────────────────────────────────
+
+export type RefundType = 'ISSUE' | 'CANCELLATION';
+
+export interface RefundHistoryItemDto {
+  type: RefundType;
   amount: number;
-  note?: string;
+  refundStatus: string;
+  bookingId: string;
+  bookingNumber: string;
+  userName: string;
+  shopName: string;
+  refundedAt: string;
+  reason?: string;
+  issueType?: string;
 }
 
-export interface VerifyPayoutInput {
-  status: 'CONFIRMED' | 'DISPUTED';
-  disputeReason?: string;
+export interface RefundHistoryResponse {
+  refunds: RefundHistoryItemDto[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
-// For super admin: association admin earnings summary (to know who to pay)
-export interface AssociationAdminEarning {
-  associationAdminId: string;
-  associationAdminName: string;
-  totalBookings: number;
-  totalEarned: number;
-  totalPaid: number;
-  pendingAmount: number;
+export interface RefundHistoryFilter {
+  type?: RefundType;
+  page?: number;
+  limit?: number;
+  from?: string;
+  to?: string;
+}
+
+// ─── Association Finance types ────────────────────────────────────────────────
+
+export interface AssocFinanceSummaryDto {
+  vendorCount: number;
+  today: FinanceSummaryPeriodDto;
+  thisWeek: FinanceSummaryPeriodDto;
+  thisMonth: FinanceSummaryPeriodDto;
+  total: FinanceSummaryPeriodDto;
 }
