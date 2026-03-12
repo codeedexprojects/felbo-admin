@@ -11,16 +11,6 @@ interface VerifyUploadResponse {
   permanentUrl: string;
 }
 
-/**
- * Generic S3 upload utility.
- * 1. Gets a presigned PUT URL from the backend
- * 2. Uploads the file directly to S3 (plain axios — no auth headers)
- * 3. Verifies the upload and returns the permanent URL from the backend
- *
- * @param file     - File to upload
- * @param endpoint - API resource base path, e.g. '/admin/categories'
- * @param onProgress - Optional progress callback (0–100)
- */
 export async function uploadFile(
   file: File,
   endpoint: string,

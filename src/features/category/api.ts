@@ -39,6 +39,20 @@ export const deleteCategory = async (categoryId: string): Promise<void> => {
   }
 };
 
+export const toggleCategoryStatus = async (
+  categoryId: string,
+  isActive: boolean
+): Promise<CategoryDto> => {
+  const response = await axios.patch<ApiResponse<CategoryDto>>(
+    `/admin/categories/${categoryId}/toggle`,
+    { isActive }
+  );
+  if (!response.data.success) {
+    throw new Error(response.data.error?.message || 'Failed to toggle category status');
+  }
+  return response.data.data;
+};
+
 export const getCategoryUploadUrl = async (
   mimeType: string,
   fileSizeBytes: number
