@@ -74,6 +74,9 @@ function CategoryFormInner({
 
     try {
       if (isEdit && category) {
+        // If status changed, we might want to check for active services.
+        // The backend toggleStatus API does this, but updateCategory might not.
+        // However, for simplicity in the form, we'll call update and handle the error.
         await updateCategory({
           id: category.id,
           input: {

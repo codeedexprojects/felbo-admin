@@ -8,6 +8,7 @@ import {
   deleteCategory,
   getCategoryUploadUrl,
   verifyCategoryUpload,
+  toggleCategoryStatus,
 } from './api';
 import { CreateCategoryInput, UpdateCategoryInput } from './types';
 
@@ -57,7 +58,19 @@ export const useCategoryUploadUrl = () => {
 };
 
 export const useVerifyCategoryUpload = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (key: string) => verifyCategoryUpload(key),
+  });
+};
+
+export const useToggleCategoryStatus = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
+      toggleCategoryStatus(id, isActive),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+    },
   });
 };

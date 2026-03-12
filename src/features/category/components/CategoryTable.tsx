@@ -12,6 +12,7 @@ import {
   XCircle,
   Ban,
   MoreHorizontal,
+  Power,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -42,9 +43,11 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
-import { useCategories, useDeleteCategory } from '../hooks';
+import { useCategories, useDeleteCategory, useToggleCategoryStatus } from '../hooks';
 import { CategoryDto } from '../types';
 import { CategoryFormDialog } from './CategoryFormDialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 function SkeletonRow({ cols }: { cols: number }) {
   return (
@@ -78,10 +81,14 @@ function ActionCell({
   category,
   onEdit,
   onDelete,
+  onToggle,
+  isToggling,
 }: {
   category: CategoryDto;
   onEdit: (category: CategoryDto) => void;
   onDelete: (category: CategoryDto) => void;
+  onToggle: (category: CategoryDto) => void;
+  isToggling: boolean;
 }) {
   return (
     <DropdownMenu>
@@ -99,6 +106,16 @@ function ActionCell({
         <DropdownMenuItem className="gap-2 text-sm" onClick={() => onEdit(category)}>
           <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
           Edit
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          className="gap-2 text-sm"
+          onClick={() => onToggle(category)}
+          disabled={isToggling}
+        >
+          <Power
+            className={cn('h-3.5 w-3.5', category.isActive ? 'text-red-500' : 'text-emerald-500')}
+          />
+          {category.isActive ? 'Deactivate' : 'Activate'}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
@@ -118,9 +135,11 @@ export function CategoryTable() {
   const [formOpen, setFormOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<CategoryDto | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<CategoryDto | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const { data: categories = [], isLoading, isError } = useCategories();
   const { mutateAsync: deleteCategory, isPending: isDeleting } = useDeleteCategory();
+  const { mutateAsync: toggleStatus, isPending: isToggling } = useToggleCategoryStatus();
 
   const filtered = useMemo(() => {
     if (!search.trim()) return categories;
@@ -139,8 +158,22 @@ export function CategoryTable() {
 
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
-    await deleteCategory(deleteTarget.id);
-    setDeleteTarget(null);
+    setActionError(null);
+    try {
+      await deleteCategory(deleteTarget.id);
+      setDeleteTarget(null);
+    } catch (err: unknown) {
+      setActionError(err instanceof Error ? err.message : 'Failed to delete category');
+    }
+  };
+
+  const handleToggleStatus = async (category: CategoryDto) => {
+    setActionError(null);
+    try {
+      await toggleStatus({ id: category.id, isActive: !category.isActive });
+    } catch (err: unknown) {
+      setActionError(err instanceof Error ? err.message : 'Failed to update status');
+    }
   };
 
   const handleFormClose = () => {
@@ -194,7 +227,13 @@ export function CategoryTable() {
       {
         id: 'actions',
         cell: ({ row }) => (
-          <ActionCell category={row.original} onEdit={handleEdit} onDelete={handleDelete} />
+          <ActionCell
+            category={row.original}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onToggle={handleToggleStatus}
+            isToggling={isToggling}
+          />
         ),
       },
     ],
@@ -255,6 +294,13 @@ export function CategoryTable() {
           </div>
         ))}
       </div>
+
+      {actionError && (
+        <Alert variant="destructive" className="py-2.5">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="text-xs">{actionError}</AlertDescription>
+        </Alert>
+      )}
 
       {/* Filter + add */}
       <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-card px-4 py-3 shadow-sm">
@@ -358,9 +404,9 @@ export function CategoryTable() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete category?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will deactivate{' '}
-              <span className="font-medium text-foreground">{deleteTarget?.name}</span>. The
-              category will be hidden from users but can be re-activated later.
+              This will permanently delete{' '}
+              <span className="font-medium text-foreground">{deleteTarget?.name}</span>. This action
+              cannot be undone and will fail if there are active services in this category.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
