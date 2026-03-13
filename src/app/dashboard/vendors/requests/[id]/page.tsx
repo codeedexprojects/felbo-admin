@@ -18,7 +18,9 @@ import {
   CheckCircle2,
   XCircle,
   ExternalLink,
+  Image as ImageIcon,
 } from 'lucide-react';
+import Image from 'next/image';
 
 import { Button } from '@/components/ui/button';
 import { RoleGuard } from '@/components/layout/RoleGuard';
@@ -429,6 +431,27 @@ export default function VendorRequestDetailPage() {
                   <p className="text-sm text-muted-foreground italic">No shop details submitted.</p>
                 )}
               </Section>
+
+              {/* Shop Photos */}
+              {data.shopDetails?.photos && data.shopDetails.photos.length > 0 && (
+                <Section title="Shop Photos" icon={ImageIcon}>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {data.shopDetails.photos.map((photo, i) => (
+                      <div
+                        key={i}
+                        className="relative aspect-video overflow-hidden rounded-lg border border-border/60 bg-muted"
+                      >
+                        <Image
+                          src={photo}
+                          alt={`Shop photo ${i + 1}`}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </Section>
+              )}
 
               {/* Association-specific */}
               {data.registrationType === 'ASSOCIATION' && (

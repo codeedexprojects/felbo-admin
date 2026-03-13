@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { Upload, X, Loader2, AlertCircle } from 'lucide-react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { uploadFile } from '@/lib/upload';
 import { cn } from '@/lib/utils';
@@ -77,7 +78,7 @@ export function CategoryImageUpload({ value, onChange, disabled }: CategoryImage
       >
         {preview ? (
           <>
-            <img src={preview} alt="Category" className="w-full h-full object-cover" />
+            <Image src={preview} alt="Category" fill className="object-cover" />
             {!disabled && (
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                 <Button

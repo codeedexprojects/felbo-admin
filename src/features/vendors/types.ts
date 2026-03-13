@@ -1,3 +1,5 @@
+import { BookingListItem } from '../bookings/types';
+
 export interface AddressInput {
   line1: string;
   line2?: string;
@@ -127,25 +129,26 @@ export interface VendorAdminDetail {
     rating: { average: number; count: number };
     onboardingStatus: string;
     status: string;
-    isActive: boolean;
+    isAvailable: boolean;
+    photos: string[];
     barbers: {
       id: string;
       name: string;
       phone: string;
       photo?: string;
-      isActive: boolean;
+      isAvailable: boolean;
     }[];
     barberCount: number;
     services: {
       id: string;
       name: string;
       basePrice: number;
-      baseDuration: number;
+      baseDurationMinutes: number;
       description?: string;
     }[];
     serviceCount: number;
   }[];
-  recentBookings: unknown[];
+  recentBookings: BookingListItem[];
 }
 
 export interface VendorRequestDetail {
@@ -178,5 +181,6 @@ export interface VendorRequestDetail {
       type: 'Point';
       coordinates: [number, number];
     };
+    photos: string[];
   };
 }
