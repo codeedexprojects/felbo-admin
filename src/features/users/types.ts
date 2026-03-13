@@ -1,3 +1,5 @@
+import { BookingListItem } from '../bookings/types';
+
 export interface ListUsersFilter {
   search?: string;
   status?: 'ACTIVE' | 'BLOCKED';
@@ -46,6 +48,7 @@ export interface UserDetail {
   name: string;
   phone: string;
   email: string | null;
+  profileUrl: string | null;
   status: 'ACTIVE' | 'BLOCKED' | 'DELETED';
   blockReason: string | null;
   walletBalance: number;
@@ -54,4 +57,11 @@ export interface UserDetail {
   lastLoginAt: string | null;
   issuesReported: UserIssue[];
   issueCount: number;
+  favorites: {
+    shopId: string;
+    name: string;
+    image: string | null;
+    rating: number;
+  }[];
+  recentBookings: BookingListItem[];
 }

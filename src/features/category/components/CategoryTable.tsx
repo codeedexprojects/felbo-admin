@@ -14,6 +14,7 @@ import {
   MoreHorizontal,
   Power,
 } from 'lucide-react';
+import Image from 'next/image';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -194,13 +195,13 @@ export function CategoryTable() {
         id: 'image',
         header: 'Image',
         cell: ({ row }) => (
-          <div className="h-9 w-9 overflow-hidden rounded-lg border border-border/60 bg-muted">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+          <div className="relative h-9 w-9 overflow-hidden rounded-lg border border-border/60 bg-muted">
+            <Image
               key={`${row.original.id}-${row.original.image}`}
               src={row.original.image}
               alt={row.original.name}
-              className="h-full w-full object-cover"
+              fill
+              className="object-cover"
             />
           </div>
         ),
@@ -238,7 +239,7 @@ export function CategoryTable() {
       },
     ],
 
-    []
+    [handleEdit, handleDelete, handleToggleStatus, isToggling]
   );
 
   const table = useReactTable({

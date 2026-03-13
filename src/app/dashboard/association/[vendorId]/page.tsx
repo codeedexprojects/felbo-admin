@@ -24,7 +24,9 @@ import {
   User,
   ChevronDown,
   ChevronUp,
+  Image as ImageIcon,
 } from 'lucide-react';
+import Image from 'next/image';
 import { useState } from 'react';
 
 // ─── Status pill ─────────────────────────────────────────────────────────────
@@ -163,12 +165,12 @@ function ShopCard({
             <span
               className={cn(
                 'rounded-full px-2 py-0.5 text-[10px] font-medium ring-1',
-                shop.isActive
+                shop.isAvailable
                   ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
                   : 'bg-gray-100 text-gray-500 ring-gray-200'
               )}
             >
-              {shop.isActive ? 'Active' : 'Inactive'}
+              {shop.isAvailable ? 'Available' : 'Unavailable'}
             </span>
             {expanded ? (
               <ChevronUp className="h-4 w-4 text-muted-foreground" />
@@ -208,6 +210,31 @@ function ShopCard({
             </div>
           </div>
 
+          {/* Shop Photos */}
+          {shop.photos && shop.photos.length > 0 && (
+            <div>
+              <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <ImageIcon className="h-3.5 w-3.5" />
+                Photos ({shop.photos.length})
+              </p>
+              <div className="flex gap-2 pb-2 overflow-x-auto scrollbar-hide">
+                {shop.photos.map((photo, i) => (
+                  <div
+                    key={i}
+                    className="relative h-24 w-32 shrink-0 overflow-hidden rounded-lg border border-border/60 bg-muted"
+                  >
+                    <Image
+                      src={photo}
+                      alt={`${shop.name} photo ${i + 1}`}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {shop.barberCount > 0 && (
             <div>
               <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -230,12 +257,12 @@ function ShopCard({
                     <span
                       className={cn(
                         'ml-auto shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ring-1',
-                        barber.isActive
+                        barber.isAvailable
                           ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
                           : 'bg-gray-100 text-gray-500 ring-gray-200'
                       )}
                     >
-                      {barber.isActive ? 'Active' : 'Off'}
+                      {barber.isAvailable ? 'Available' : 'Unavailable'}
                     </span>
                   </div>
                 ))}
@@ -266,7 +293,7 @@ function ShopCard({
                         ₹{service.basePrice}
                       </span>
                       <span className="text-xs text-muted-foreground">
-                        {service.baseDuration} min
+                        {service.baseDurationMinutes} min
                       </span>
                     </div>
                   </div>
