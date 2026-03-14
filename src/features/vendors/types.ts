@@ -16,7 +16,7 @@ export interface Vendor {
   ownerName: string;
   email: string | null;
   registrationType?: 'ASSOCIATION' | 'INDEPENDENT' | 'UNKNOWN';
-  verificationStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
+  verificationStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | 'PAYMENT_PENDING';
   status: 'PENDING' | 'ACTIVE' | 'SUSPENDED' | 'DELETED';
   createdAt: string;
   shopDetails?: {
@@ -33,6 +33,22 @@ export interface Vendor {
   registrationPaymentOrderId?: string;
 }
 
+export interface DayHours {
+  open: string;
+  close: string;
+  isOpen: boolean;
+}
+
+export interface WorkingHours {
+  monday: DayHours;
+  tuesday: DayHours;
+  wednesday: DayHours;
+  thursday: DayHours;
+  friday: DayHours;
+  saturday: DayHours;
+  sunday: DayHours;
+}
+
 export interface VendorStatusCounts {
   total: number;
   active: number;
@@ -46,7 +62,7 @@ export interface VendorListItem {
   ownerName: string;
   phone: string;
   type: 'ASSOCIATION' | 'INDEPENDENT';
-  verificationStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
+  verificationStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | 'PAYMENT_PENDING';
   status: 'PENDING' | 'ACTIVE' | 'SUSPENDED' | 'DELETED';
   registered: string;
 }
@@ -106,7 +122,7 @@ export interface VendorAdminDetail {
   ownerName: string;
   registrationType: 'ASSOCIATION' | 'INDEPENDENT';
   registrationDate: string;
-  verificationStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
+  verificationStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | 'PAYMENT_PENDING';
   verificationNote?: string;
   verifiedAt?: string;
   status: 'PENDING' | 'ACTIVE' | 'SUSPENDED' | 'DELETED';
@@ -131,6 +147,7 @@ export interface VendorAdminDetail {
     status: string;
     isAvailable: boolean;
     photos: string[];
+    workingHours?: WorkingHours;
     barbers: {
       id: string;
       name: string;
@@ -158,7 +175,7 @@ export interface VendorRequestDetail {
   ownerName: string;
   registrationType: 'ASSOCIATION' | 'INDEPENDENT';
   registrationDate: string;
-  verificationStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
+  verificationStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | 'PAYMENT_PENDING';
   verificationNote?: string;
   // Association-specific
   associationMemberId?: string;
