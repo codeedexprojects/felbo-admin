@@ -43,6 +43,7 @@ export interface BookingCancellation {
   cancelledBy: string;
   reason: string;
   refundAmount: number;
+  refundCoins?: number;
   refundType: string;
   refundStatus: string;
 }
