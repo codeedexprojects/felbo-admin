@@ -38,6 +38,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 /* ─── Helpers ─────────────────────────────────────────────────── */
 
@@ -167,13 +168,13 @@ export default function VendorRequestDetailPage() {
       setApproveOpen(false);
       router.push('/dashboard/vendors/requests');
     } catch (err: unknown) {
-      alert((err as Error).message || 'Failed to approve vendor');
+      toast.error((err as Error).message || 'Failed to approve vendor');
     }
   };
 
   const handleReject = async () => {
     if (!reason.trim() || reason.trim().length < 5) {
-      alert('Please provide a rejection reason (min 5 characters)');
+      toast.error('Please provide a rejection reason (min 5 characters)');
       return;
     }
     try {
@@ -181,7 +182,7 @@ export default function VendorRequestDetailPage() {
       setRejectOpen(false);
       router.push('/dashboard/vendors/requests');
     } catch (err: unknown) {
-      alert((err as Error).message || 'Failed to reject vendor');
+      toast.error((err as Error).message || 'Failed to reject vendor');
     }
   };
 

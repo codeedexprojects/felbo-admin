@@ -15,6 +15,7 @@ import {
 } from '../../../components/ui/dialog';
 import { Textarea } from '../../../components/ui/textarea';
 import { Label } from '../../../components/ui/label';
+import { toast } from 'sonner';
 import { useVerifyVendor, useRejectVendor } from '@/features/vendors/hooks';
 import { Vendor } from '@/features/vendors/types';
 
@@ -36,20 +37,20 @@ export function VerificationActions({ vendor }: VerificationActionsProps) {
       setApproveOpen(false);
       // Optional: Add a localized success feedback if desired
     } catch (error: unknown) {
-      alert((error as Error).message || 'Failed to approve vendor');
+      toast.error((error as Error).message || 'Failed to approve vendor');
     }
   };
 
   const handleReject = async () => {
     if (!reason.trim() || reason.trim().length < 5) {
-      alert('Please provide a rejection reason (min 5 characters)');
+      toast.error('Please provide a rejection reason (min 5 characters)');
       return;
     }
     try {
       await rejectMutation.mutateAsync({ id: vendor.id, reason });
       setRejectOpen(false);
     } catch (error: unknown) {
-      alert((error as Error).message || 'Failed to reject vendor');
+      toast.error((error as Error).message || 'Failed to reject vendor');
     }
   };
 
