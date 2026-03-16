@@ -1,7 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ShieldAlert, Sliders, ReceiptIndianRupee, Ban, Search, AlertCircle } from 'lucide-react';
+import {
+  ShieldAlert,
+  Sliders,
+  ReceiptIndianRupee,
+  Ban,
+  Search,
+  AlertCircle,
+  Coins,
+} from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { RoleGuard } from '@/components/layout/RoleGuard';
 import { BookingSettings } from '@/features/system-config/components/BookingSettings';
@@ -9,6 +17,7 @@ import { CancellationSettings } from '@/features/system-config/components/Cancel
 import { AbuseLimits } from '@/features/system-config/components/AbuseLimits';
 import { SearchSettings } from '@/features/system-config/components/SearchSettings';
 import { IssueSettings } from '@/features/system-config/components/IssueSettings';
+import { FelboCoinSettings } from '@/features/system-config/components/FelboCoinSettings';
 import {
   Select,
   SelectContent,
@@ -17,7 +26,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-type ConfigSection = 'booking' | 'cancellation' | 'abuse' | 'search' | 'issue';
+type ConfigSection = 'booking' | 'cancellation' | 'abuse' | 'search' | 'issue' | 'felbocoin';
 
 export default function SystemConfigPage() {
   const [activeSection, setActiveSection] = useState<ConfigSection>('booking');
@@ -75,6 +84,12 @@ export default function SystemConfigPage() {
                   <span>Issue Settings</span>
                 </div>
               </SelectItem>
+              <SelectItem value="felbocoin">
+                <div className="flex items-center gap-2">
+                  <Coins className="h-4 w-4 text-yellow-500" />
+                  <span>FelboCoin Settings</span>
+                </div>
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -99,6 +114,7 @@ export default function SystemConfigPage() {
           {activeSection === 'abuse' && <AbuseLimits />}
           {activeSection === 'search' && <SearchSettings />}
           {activeSection === 'issue' && <IssueSettings />}
+          {activeSection === 'felbocoin' && <FelboCoinSettings />}
         </div>
       </div>
     </RoleGuard>

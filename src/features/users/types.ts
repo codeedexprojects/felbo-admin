@@ -14,7 +14,7 @@ export interface UserListItem {
   phone: string;
   email: string | null;
   status: 'ACTIVE' | 'BLOCKED' | 'DELETED';
-  walletBalance: number;
+  felboCoinBalance: number;
   cancellationCount: number;
   lastLoginAt: string | null;
   registeredAt: string;
@@ -51,7 +51,7 @@ export interface UserDetail {
   profileUrl: string | null;
   status: 'ACTIVE' | 'BLOCKED' | 'DELETED';
   blockReason: string | null;
-  walletBalance: number;
+  felboCoinBalance: number;
   cancellationCount: number;
   registeredAt: string;
   lastLoginAt: string | null;

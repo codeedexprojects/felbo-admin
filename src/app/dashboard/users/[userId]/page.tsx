@@ -191,10 +191,10 @@ export default function UserDetailPage({ params }: { params: { userId: string } 
         {/* Account Details */}
         <Card title="Account Activity" icon={CreditCard}>
           <InfoRow
-            label="Wallet Balance"
+            label="Felbo Coins"
             value={
               <span className="font-mono text-sm font-semibold text-emerald-600">
-                ₹{user.walletBalance.toFixed(2)}
+                {user.felboCoinBalance.toFixed(2)}
               </span>
             }
           />
