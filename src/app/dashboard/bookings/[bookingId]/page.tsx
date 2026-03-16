@@ -39,6 +39,20 @@ function safeFormat(value: string | null | undefined, fmt: string): string {
   return format(d, fmt);
 }
 
+// Convert "HH:mm" (24h) to "hh:mm a" (12h)
+function formatTime12h(timeStr: string | null | undefined): string {
+  if (!timeStr) return '—';
+  try {
+    const [hours, minutes] = timeStr.split(':');
+    const date = new Date();
+    date.setHours(parseInt(hours, 10));
+    date.setMinutes(parseInt(minutes, 10));
+    return format(date, 'hh:mm a');
+  } catch {
+    return timeStr;
+  }
+}
+
 function Section({
   title,
   icon: Icon,
@@ -266,7 +280,10 @@ export default function BookingDetailPage() {
         <Section title="Appointment Time" icon={Clock}>
           <div className="grid grid-cols-2 gap-x-6 gap-y-5">
             <Field label="Date" value={safeFormat(booking.date, 'EEEE, dd MMM yyyy')} />
-            <Field label="Time" value={`${booking.startTime} - ${booking.endTime}`} />
+            <Field
+              label="Time"
+              value={`${formatTime12h(booking.startTime)} - ${formatTime12h(booking.endTime)}`}
+            />
           </div>
         </Section>
 
@@ -299,7 +316,25 @@ export default function BookingDetailPage() {
                   </span>
                 }
               />
-              <Field label="Amount" value={`₹${booking.cancellation.refundAmount}`} />
+              <Field
+                label="Refund Type"
+                value={
+                  <Badge variant="outline" className="text-[10px] uppercase">
+                    {(booking.cancellation.refundType || '—').replace('_', ' ')}
+                  </Badge>
+                }
+              />
+              <Field
+                label="Refund Amount"
+                value={
+                  booking.cancellation.refundType === 'FELBO_COINS'
+                    ? '—'
+                    : `₹${booking.cancellation.refundAmount}`
+                }
+              />
+              {(booking.cancellation.refundCoins ?? 0) > 0 && (
+                <Field label="Refunded Coins" value={booking.cancellation.refundCoins} />
+              )}
               <div className="col-span-2">
                 <Field label="Reason" value={booking.cancellation.reason || 'Not provided'} />
               </div>
