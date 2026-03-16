@@ -21,6 +21,7 @@ const KEYS = [
   'user_block_duration_hours',
   'vendor_cancel_warning_threshold_percent',
   'vendor_cancel_review_threshold_percent',
+  'shop_cancel_weekly_limit',
 ] as const;
 
 type AbuseKey = (typeof KEYS)[number];
@@ -34,6 +35,7 @@ export function AbuseLimits() {
     user_block_duration_hours: '24',
     vendor_cancel_warning_threshold_percent: '10',
     vendor_cancel_review_threshold_percent: '20',
+    shop_cancel_weekly_limit: '5',
   });
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -107,6 +109,28 @@ export function AbuseLimits() {
                   />
                   <p className="text-[11px] text-muted-foreground">
                     Duration of the automatic user block.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4 pt-4 border-t">
+              <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                Shop Limits
+              </h4>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label htmlFor="shop_cancel_weekly_limit">Shop Cancel Weekly Limit</Label>
+                  <Input
+                    id="shop_cancel_weekly_limit"
+                    type="number"
+                    value={values.shop_cancel_weekly_limit}
+                    onChange={(e) =>
+                      setValues((v) => ({ ...v, shop_cancel_weekly_limit: e.target.value }))
+                    }
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    Max weekly vendor-initiated cancellations per shop before the vendor is flagged.
                   </p>
                 </div>
               </div>

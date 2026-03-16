@@ -70,12 +70,12 @@ export const createUserColumns = ({
     },
   },
   {
-    accessorKey: 'walletBalance',
-    header: 'Wallet',
+    accessorKey: 'felboCoinBalance',
+    header: 'Felbo Coins',
     cell: ({ row }) => {
       return (
         <span className="font-mono text-sm font-medium">
-          ₹{row.original.walletBalance.toFixed(2)}
+          {row.original.felboCoinBalance.toFixed(2)}
         </span>
       );
     },
