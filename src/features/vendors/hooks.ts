@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import {
   getVendors,
   getVendorDetail,
@@ -90,7 +91,7 @@ export const useVerifyVendor = () => {
     onError: () => {
       queryClient.invalidateQueries({ queryKey: ['vendors'] });
       queryClient.invalidateQueries({ queryKey: ['vendor-requests'] });
-      alert('Failed to verify vendor. Please try again.');
+      toast.error('Failed to verify vendor. Please try again.');
     },
   });
 };
@@ -137,7 +138,7 @@ export const useRejectVendor = () => {
     onError: () => {
       queryClient.invalidateQueries({ queryKey: ['vendors'] });
       queryClient.invalidateQueries({ queryKey: ['vendor-requests'] });
-      alert('Failed to reject vendor.');
+      toast.error('Failed to reject vendor. Please try again.');
     },
   });
 };

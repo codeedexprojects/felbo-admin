@@ -15,6 +15,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -121,7 +122,7 @@ export default function BookingDetailPage() {
 
   const handleRefund = async () => {
     if (!refundReason.trim() || refundReason.trim().length < 5) {
-      alert('Please provide a valid reason (min 5 characters)');
+      toast.error('Please provide a valid reason (min 5 characters)');
       return;
     }
     try {
@@ -129,7 +130,7 @@ export default function BookingDetailPage() {
       setRefundOpen(false);
       // Wait a tick then optimistically reflect changes
     } catch (err: unknown) {
-      alert((err as Error).message || 'Failed to process refund');
+      toast.error((err as Error).message || 'Failed to process refund');
     }
   };
 

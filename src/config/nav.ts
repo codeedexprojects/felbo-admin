@@ -11,6 +11,7 @@ import {
   Megaphone,
   Banknote,
   LayoutGrid,
+  ClipboardCheck,
 } from 'lucide-react';
 import { AdminRole } from '@/types/api';
 
@@ -31,6 +32,12 @@ export const navItems: NavItem[] = [
     title: 'Vendors',
     href: '/dashboard/vendors',
     icon: Store,
+    roles: ['SUPER_ADMIN', 'SUB_ADMIN'],
+  },
+  {
+    title: 'Shop Approvals',
+    href: '/dashboard/shops/approval',
+    icon: ClipboardCheck,
     roles: ['SUPER_ADMIN', 'SUB_ADMIN'],
   },
   {
