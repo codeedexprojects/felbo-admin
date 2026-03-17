@@ -34,6 +34,12 @@ export interface CreateAdInput {
   priority?: number;
 }
 
+export interface ShopSearchResult {
+  id: string;
+  name: string;
+  address: { area: string; city: string };
+}
+
 export interface UpdateAdInput {
   title?: string;
   subtitle?: string;

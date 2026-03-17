@@ -1,6 +1,13 @@
 import apiClient from '@/lib/axios';
 import { ApiResponse } from '@/types/api';
-import { Ad, ListAdsFilter, ListAdsResponse, CreateAdInput, UpdateAdInput } from './types';
+import {
+  Ad,
+  ListAdsFilter,
+  ListAdsResponse,
+  CreateAdInput,
+  UpdateAdInput,
+  ShopSearchResult,
+} from './types';
 
 export const getAds = async (filters: ListAdsFilter): Promise<ListAdsResponse> => {
   const params = new URLSearchParams({
@@ -55,4 +62,16 @@ export const deleteAd = async (id: string): Promise<void> => {
   if (!response.data.success) {
     throw new Error(response.data.error?.message || 'Failed to delete advertisement');
   }
+};
+
+export const searchShops = async (query: string): Promise<ShopSearchResult[]> => {
+  const response = await apiClient.get<ApiResponse<{ shops: ShopSearchResult[] }>>(
+    `/public/shops/search?query=${encodeURIComponent(query)}&limit=8`
+  );
+
+  if (!response.data.success) {
+    throw new Error(response.data.error?.message || 'Failed to search shops');
+  }
+
+  return response.data.data.shops;
 };

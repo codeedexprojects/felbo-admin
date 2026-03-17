@@ -42,20 +42,10 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PageHeader } from '@/components/layout/PageHeader';
 
-import { useAds, useUpdateAd, useDeleteAd } from '@/features/advertisements/hooks';
-import { Ad, UpdateAdInput } from '@/features/advertisements/types';
+import { useAds, useUpdateAd, useDeleteAd, useShopSearch } from '@/features/advertisements/hooks';
+import { Ad, UpdateAdInput, ShopSearchResult } from '@/features/advertisements/types';
 import { BannerImageUploader } from '@/features/advertisements/BannerImageUploader';
-import apiClient from '@/lib/axios';
-import { ApiResponse } from '@/types/api';
 import { useDebounce } from '@/hooks/useDebounce';
-
-// ── Shop search types ─────────────────────────────────────────────────────────
-
-interface ShopSearchResult {
-  id: string;
-  name: string;
-  address: { area: string; city: string };
-}
 
 // ── Edit-only zod schema (all fields optional) ────────────────────────────────
 
@@ -192,12 +182,12 @@ function ShopSearchField({
   const [query, setQuery] = useState('');
   const [selectedName, setSelectedName] = useState('');
   const [open, setOpen] = useState(false);
-  const [results, setResults] = useState<ShopSearchResult[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
   const debouncedQuery = useDebounce(query, 350);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [dropdownStyle, setDropdownStyle] = useState<CSSProperties>({});
+
+  const { data: results = [], isFetching: isSearching } = useShopSearch(debouncedQuery);
 
   const updateDropdownPosition = useCallback(() => {
     if (!inputRef.current) return;
@@ -212,26 +202,9 @@ function ShopSearchField({
   }, []);
 
   useEffect(() => {
-    if (!debouncedQuery.trim()) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setResults([]);
-      return;
-    }
-    setIsSearching(true);
-    updateDropdownPosition();
-    apiClient
-      .get<ApiResponse<{ shops: ShopSearchResult[] }>>(
-        `/public/shops/search?query=${encodeURIComponent(debouncedQuery)}&limit=8`
-      )
-      .then((r) => {
-        if (r.data.success) {
-          setResults(r.data.data.shops);
-          setOpen(true);
-        }
-      })
-      .catch(() => setResults([]))
-      .finally(() => setIsSearching(false));
-  }, [debouncedQuery, updateDropdownPosition]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (results.length > 0) setOpen(true);
+  }, [results]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -244,7 +217,6 @@ function ShopSearchField({
   const handleSelect = (shop: ShopSearchResult) => {
     setSelectedName(shop.name);
     setQuery('');
-    setResults([]);
     setOpen(false);
     onChange(shop.id, shop.name);
   };
@@ -252,7 +224,6 @@ function ShopSearchField({
   const handleClear = () => {
     setSelectedName('');
     setQuery('');
-    setResults([]);
     onChange('', '');
   };
 
