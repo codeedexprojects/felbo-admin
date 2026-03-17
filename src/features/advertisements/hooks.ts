@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getAds, getAdById, createAd, updateAd, deleteAd } from './api';
+import { getAds, getAdById, createAd, updateAd, deleteAd, searchShops } from './api';
 import { ListAdsFilter, CreateAdInput, UpdateAdInput } from './types';
 
 export const useAds = (filters: ListAdsFilter) => {
@@ -51,5 +51,14 @@ export const useDeleteAd = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['advertisements'] });
     },
+  });
+};
+
+export const useShopSearch = (query: string) => {
+  return useQuery({
+    queryKey: ['shop-search', query],
+    queryFn: () => searchShops(query),
+    enabled: query.trim().length > 0,
+    placeholderData: [],
   });
 };
