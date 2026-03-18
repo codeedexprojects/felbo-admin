@@ -5,7 +5,6 @@ import { flexRender, getCoreRowModel, useReactTable, ColumnDef } from '@tanstack
 import { Download, ArrowUpDown, ArrowUp, ArrowDown, Calendar as CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ModernDatePicker } from '@/components/ui/modern-date-picker';
 import { format } from 'date-fns';
@@ -244,7 +243,7 @@ export function RevenueReportsTable() {
                   {filter.from ? format(new Date(filter.from), 'dd MMM yyyy') : 'From Date'}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[320px] p-0" align="start">
+              <PopoverContent className="w-auto p-0" align="start">
                 <ModernDatePicker
                   selected={filter.from ? new Date(filter.from) : undefined}
                   onSelect={(date) => handleDateChange(date, 'from')}
@@ -267,7 +266,7 @@ export function RevenueReportsTable() {
                   {filter.to ? format(new Date(filter.to), 'dd MMM yyyy') : 'To Date'}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[320px] p-0" align="start">
+              <PopoverContent className="w-auto p-0" align="start">
                 <ModernDatePicker
                   selected={filter.to ? new Date(filter.to) : undefined}
                   onSelect={(date) => handleDateChange(date, 'to')}

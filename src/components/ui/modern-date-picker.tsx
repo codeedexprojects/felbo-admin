@@ -45,7 +45,7 @@ export function ModernDatePicker({ selected, onSelect }: ModernDatePickerProps) 
   ];
 
   return (
-    <Card className="border-0 shadow-2xl overflow-hidden bg-card/95 backdrop-blur-md ring-1 ring-border/50">
+    <Card className="w-[260px] border-0 shadow-2xl overflow-hidden bg-card/95 backdrop-blur-md ring-1 ring-border/50">
       <CardContent className="p-0 border-b border-border/40">
         <Calendar
           mode="single"
@@ -54,7 +54,7 @@ export function ModernDatePicker({ selected, onSelect }: ModernDatePickerProps) 
           month={currentMonth}
           onMonthChange={setCurrentMonth}
           fixedWeeks
-          className="p-4 [[data-slot=calendar]]:w-full [--cell-size:2.5rem]"
+          className="p-2 [[data-slot=calendar]]:w-full [--cell-size:2rem]"
           showOutsideDays={false}
         />
       </CardContent>

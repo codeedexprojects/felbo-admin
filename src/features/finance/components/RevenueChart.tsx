@@ -1,6 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { Calendar } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ModernDatePicker } from '@/components/ui/modern-date-picker';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 import {
   AreaChart,
   Area,
@@ -172,21 +178,50 @@ export function RevenueChart() {
 
       {/* Custom date range row */}
       {period === 'custom' && (
-        <div className="flex items-center gap-3 border-b border-border/40 bg-muted/20 px-5 py-3">
-          <span className="text-xs text-muted-foreground">From</span>
-          <input
-            type="date"
-            value={from}
-            onChange={(e) => setFrom(e.target.value)}
-            className="h-8 rounded-md border border-border/60 bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-          />
-          <span className="text-xs text-muted-foreground">To</span>
-          <input
-            type="date"
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
-            className="h-8 rounded-md border border-border/60 bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-          />
+        <div className="flex items-center gap-2 border-b border-border/40 bg-muted/20 px-5 py-3">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  'h-9 w-[140px] px-3 text-xs font-normal border-border/60 bg-muted/30 justify-start',
+                  !from && 'text-muted-foreground'
+                )}
+              >
+                <Calendar className="mr-2 h-3.5 w-3.5" />
+                {from ? format(new Date(from), 'dd MMM yyyy') : 'From Date'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <ModernDatePicker
+                selected={from ? new Date(from) : undefined}
+                onSelect={(date) => setFrom(date ? format(date, 'yyyy-MM-dd') : '')}
+              />
+            </PopoverContent>
+          </Popover>
+
+          <span className="text-muted-foreground text-sm">–</span>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  'h-9 w-[140px] px-3 text-xs font-normal border-border/60 bg-muted/30 justify-start',
+                  !to && 'text-muted-foreground'
+                )}
+              >
+                <Calendar className="mr-2 h-3.5 w-3.5" />
+                {to ? format(new Date(to), 'dd MMM yyyy') : 'To Date'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <ModernDatePicker
+                selected={to ? new Date(to) : undefined}
+                onSelect={(date) => setTo(date ? format(date, 'yyyy-MM-dd') : '')}
+              />
+            </PopoverContent>
+          </Popover>
         </div>
       )}
 

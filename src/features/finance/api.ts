@@ -84,6 +84,8 @@ export const fetchPayouts = async (filter: PayoutListFilter): Promise<PayoutList
     limit: filter.limit ?? 10,
   };
   if (filter.status) params.status = filter.status;
+  if (filter.from) params.from = filter.from;
+  if (filter.to) params.to = filter.to;
   const res = await apiClient.get<ApiResponse<PayoutListResponse>>('/admin/payout', { params });
   return res.data.data!;
 };

@@ -12,7 +12,6 @@ import {
   CalendarDays,
   Wallet,
 } from 'lucide-react';
-import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ModernDatePicker } from '@/components/ui/modern-date-picker';
 import { format } from 'date-fns';
@@ -302,7 +301,7 @@ export function AssociationRevenueTable() {
                   {filter.from ? format(new Date(filter.from), 'dd MMM yyyy') : 'From Date'}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[320px] p-0" align="start">
+              <PopoverContent className="w-auto p-0" align="start">
                 <ModernDatePicker
                   selected={filter.from ? new Date(filter.from) : undefined}
                   onSelect={(date) => handleDateChange(date, 'from')}
@@ -325,7 +324,7 @@ export function AssociationRevenueTable() {
                   {filter.to ? format(new Date(filter.to), 'dd MMM yyyy') : 'To Date'}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[320px] p-0" align="start">
+              <PopoverContent className="w-auto p-0" align="start">
                 <ModernDatePicker
                   selected={filter.to ? new Date(filter.to) : undefined}
                   onSelect={(date) => handleDateChange(date, 'to')}
