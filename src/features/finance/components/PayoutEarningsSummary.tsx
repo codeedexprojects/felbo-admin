@@ -5,7 +5,10 @@ import { useAssocPayoutSummary } from '../hooks';
 import { useMounted } from '@/hooks/use-mounted';
 
 function fmt(n: number) {
-  return `₹${n.toLocaleString('en-IN')}`;
+  return `₹${n.toLocaleString('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 export function PayoutEarningsSummary() {

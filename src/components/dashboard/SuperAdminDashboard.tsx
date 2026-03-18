@@ -91,7 +91,10 @@ export function SuperAdminDashboard() {
           <StatCard
             index={5}
             title="Today's Revenue"
-            value={`₹${(data?.todaysRevenue ?? 0).toLocaleString()}`}
+            value={`₹${(data?.todaysRevenue ?? 0).toLocaleString('en-IN', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}`}
             icon={IndianRupee}
             description="Sum of ₹10 advances"
             trend="up"

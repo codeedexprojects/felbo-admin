@@ -5,7 +5,10 @@ import { useFinanceSummary } from '../hooks';
 import { useMounted } from '@/hooks/use-mounted';
 
 function formatCurrency(amount: number) {
-  return `₹${amount.toLocaleString('en-IN')}`;
+  return `₹${amount.toLocaleString('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 export function AssociationCommissionCard() {

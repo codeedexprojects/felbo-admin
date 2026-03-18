@@ -43,7 +43,7 @@ export interface BookingCancellation {
   cancelledBy: string;
   reason: string;
   refundAmount: number;
-  refundCoins?: number;
+  refundCoins: number;
   refundType: string;
   refundStatus: string;
 }
@@ -51,9 +51,9 @@ export interface BookingCancellation {
 export interface BookingDetail {
   id: string;
   bookingNumber: string;
-  userId: string;
-  userName: string;
-  userPhone: string;
+  userId?: string;
+  userName?: string;
+  userPhone?: string;
   shopId: string;
   shopName: string;
   barberId: string;

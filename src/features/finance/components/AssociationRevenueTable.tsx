@@ -8,10 +8,15 @@ import {
   ArrowUp,
   ArrowDown,
   ArrowUpDown,
-  Calendar,
+  Calendar as CalendarIcon,
   CalendarDays,
   Wallet,
 } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ModernDatePicker } from '@/components/ui/modern-date-picker';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -27,7 +32,10 @@ import { VendorRevenueRow, VendorRevenueTableFilter, FinancePeriod } from '../ty
 import { useMounted } from '@/hooks/use-mounted';
 
 function formatCurrency(amount: number) {
-  return `₹${amount.toLocaleString('en-IN')}`;
+  return `₹${amount.toLocaleString('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 function SkeletonRow({ cols }: { cols: number }) {
@@ -146,8 +154,9 @@ export function AssociationRevenueTable() {
     }));
   };
 
-  const handleDateChange = (e: ChangeEvent<HTMLInputElement>, key: 'from' | 'to') => {
-    setFilter((prev) => ({ ...prev, [key]: e.target.value || undefined, page: 1 }));
+  const handleDateChange = (date: Date | undefined, key: 'from' | 'to') => {
+    const val = date ? format(date, 'yyyy-MM-dd') : undefined;
+    setFilter((prev) => ({ ...prev, [key]: val, page: 1 }));
   };
 
   const SortIcon =
@@ -197,7 +206,7 @@ export function AssociationRevenueTable() {
           <div className="flex items-center justify-between">
             <p className="text-xs text-muted-foreground font-medium">This Week</p>
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-50">
-              <Calendar className="h-4 w-4 text-violet-600" />
+              <CalendarIcon className="h-4 w-4 text-violet-600" />
             </div>
           </div>
           <div>
@@ -280,19 +289,49 @@ export function AssociationRevenueTable() {
 
         {filter.period === 'custom' && (
           <div className="flex items-center gap-2">
-            <input
-              type="date"
-              value={filter.from || ''}
-              onChange={(e) => handleDateChange(e, 'from')}
-              className="h-10 rounded-md border border-border/60 bg-muted/30 px-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    'h-10 w-[140px] px-3 text-xs font-normal border-border/60 bg-muted/30 justify-start',
+                    !filter.from && 'text-muted-foreground'
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                  {filter.from ? format(new Date(filter.from), 'dd MMM yyyy') : 'From Date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[320px] p-0" align="start">
+                <ModernDatePicker
+                  selected={filter.from ? new Date(filter.from) : undefined}
+                  onSelect={(date) => handleDateChange(date, 'from')}
+                />
+              </PopoverContent>
+            </Popover>
+
             <span className="text-muted-foreground text-sm">–</span>
-            <input
-              type="date"
-              value={filter.to || ''}
-              onChange={(e) => handleDateChange(e, 'to')}
-              className="h-10 rounded-md border border-border/60 bg-muted/30 px-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-            />
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    'h-10 w-[140px] px-3 text-xs font-normal border-border/60 bg-muted/30 justify-start',
+                    !filter.to && 'text-muted-foreground'
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                  {filter.to ? format(new Date(filter.to), 'dd MMM yyyy') : 'To Date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[320px] p-0" align="start">
+                <ModernDatePicker
+                  selected={filter.to ? new Date(filter.to) : undefined}
+                  onSelect={(date) => handleDateChange(date, 'to')}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
         )}
 

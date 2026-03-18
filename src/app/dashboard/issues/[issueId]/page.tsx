@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import {
@@ -296,17 +297,17 @@ export default function IssueDetailPage({ params }: { params: { issueId: string 
                   variant="outline"
                   className={cn(
                     'gap-1.5',
-                    issue.refundStatus === 'ISSUED'
+                    issue.refund.status === 'ISSUED'
                       ? 'border-blue-400 bg-blue-50 text-blue-700 disabled:opacity-100 cursor-not-allowed font-medium shadow-none'
-                      : issue.refundStatus === 'PENDING'
+                      : issue.refund.status === 'PENDING'
                         ? 'border-gray-300 bg-gray-50 text-gray-500 disabled:opacity-100 cursor-not-allowed font-medium shadow-none'
                         : 'border-blue-500 text-blue-600 hover:bg-blue-50 hover:text-blue-700'
                   )}
                   onClick={handleProcessRefund}
                   disabled={
                     isBusy ||
-                    issue.refundStatus === 'ISSUED' ||
-                    issue.refundStatus === 'PENDING' ||
+                    issue.refund.status === 'ISSUED' ||
+                    issue.refund.status === 'PENDING' ||
                     processRefund.isPending
                   }
                 >
@@ -315,9 +316,9 @@ export default function IssueDetailPage({ params }: { params: { issueId: string 
                   ) : (
                     <Undo2 className="h-3.5 w-3.5" />
                   )}
-                  {issue.refundStatus === 'ISSUED'
+                  {issue.refund.status === 'ISSUED'
                     ? 'Refunded'
-                    : issue.refundStatus === 'PENDING'
+                    : issue.refund.status === 'PENDING'
                       ? 'Refund Pending'
                       : 'Issue Refund'}
                 </Button>
@@ -384,11 +385,35 @@ export default function IssueDetailPage({ params }: { params: { issueId: string 
         <Card title="Issue Info" icon={Store}>
           <InfoRow label="Type" value={<TypeBadge type={issue.type} />} />
           <InfoRow
-            label="Booking ID"
-            value={<span className="font-mono text-xs">{issue.bookingId}</span>}
+            label="Booking Number"
+            value={<span className="font-mono text-xs">{issue.bookingNumber || '—'}</span>}
           />
           <InfoRow label="Status" value={<StatusBadge status={issue.status} />} />
-          <InfoRow label="Refund Status" value={<RefundBadge status={issue.refundStatus} />} />
+          <InfoRow label="Refund Status" value={<RefundBadge status={issue.refund.status} />} />
+          <InfoRow
+            label="Refund Method"
+            value={
+              issue.refund.method ? (
+                <Badge variant="outline" className="text-[10px]">
+                  {issue.refund.method}
+                </Badge>
+              ) : (
+                '—'
+              )
+            }
+          />
+          {(issue.refund.amount ?? 0) > 0 && (
+            <InfoRow label="Refund Amount" value={`₹${issue.refund.amount}`} />
+          )}
+          {(issue.refund.coins ?? 0) > 0 && (
+            <InfoRow label="Refund Coins" value={`${issue.refund.coins} Coins`} />
+          )}
+          {issue.refund.refundId && (
+            <InfoRow
+              label="Refund ID"
+              value={<span className="font-mono text-[10px]">{issue.refund.refundId}</span>}
+            />
+          )}
           {issue.reviewedBy && (
             <InfoRow
               label="Reviewed By"
@@ -489,36 +514,23 @@ export default function IssueDetailPage({ params }: { params: { issueId: string 
         </Card>
       </div>
 
-      {/* Photo + Location (optional) */}
-      {(issue.photoUrl || issue.userLocation) && (
+      {/* Location (optional) */}
+      {issue.userLocation && (
         <div className="grid gap-4 lg:grid-cols-2">
-          {issue.photoUrl && (
-            <Card title="Photo Evidence" icon={ImageIcon}>
-              <div className="py-3">
-                <img
-                  src={issue.photoUrl}
-                  alt="Issue photo"
-                  className="w-full rounded-lg object-cover max-h-64"
-                />
-              </div>
-            </Card>
-          )}
-          {issue.userLocation && (
-            <Card title="User Location" icon={MapPin}>
-              <InfoRow label="Latitude" value={issue.userLocation.lat} />
-              <InfoRow label="Longitude" value={issue.userLocation.lng} />
-              <div className="py-3">
-                <a
-                  href={`https://maps.google.com/?q=${issue.userLocation.lat},${issue.userLocation.lng}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-primary hover:underline"
-                >
-                  Open in Google Maps →
-                </a>
-              </div>
-            </Card>
-          )}
+          <Card title="User Location" icon={MapPin}>
+            <InfoRow label="Latitude" value={issue.userLocation.lat} />
+            <InfoRow label="Longitude" value={issue.userLocation.lng} />
+            <div className="py-3">
+              <a
+                href={`https://maps.google.com/?q=${issue.userLocation.lat},${issue.userLocation.lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-primary hover:underline"
+              >
+                Open in Google Maps →
+              </a>
+            </div>
+          </Card>
         </div>
       )}
     </div>
