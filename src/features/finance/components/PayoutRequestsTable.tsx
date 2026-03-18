@@ -46,7 +46,10 @@ import { useMounted } from '@/hooks/use-mounted';
 import { cn } from '@/lib/utils';
 
 function fmt(n: number) {
-  return `₹${n.toLocaleString('en-IN')}`;
+  return `₹${n.toLocaleString('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 function fmtDate(d: string | null) {

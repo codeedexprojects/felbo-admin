@@ -48,7 +48,10 @@ export function AssociationAdminDashboard() {
           <StatCard
             index={2}
             title="Share Pending"
-            value={`₹${(data?.myVendorsRevenue ?? 0).toLocaleString()}`}
+            value={`₹${(data?.myVendorsRevenue ?? 0).toLocaleString('en-IN', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}`}
             icon={TrendingUp}
             description="Revenue share"
             color="emerald"

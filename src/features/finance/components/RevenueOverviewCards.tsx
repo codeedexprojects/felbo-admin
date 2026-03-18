@@ -6,7 +6,10 @@ import { useMounted } from '@/hooks/use-mounted';
 import { FinanceSummaryPeriodDto } from '../types';
 
 function formatCurrency(amount: number) {
-  return `₹${amount.toLocaleString('en-IN')}`;
+  return `₹${amount.toLocaleString('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 const cards = [

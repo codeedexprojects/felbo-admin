@@ -28,7 +28,7 @@ export interface Issue {
 
 export interface IssueDetail {
   id: string;
-  bookingId: string;
+  bookingNumber: string | null;
   user: { id: string; name: string; phone: string } | null;
   vendor: { id: string; name: string; phone: string; isFlagged: boolean } | null;
   shop: {
@@ -41,9 +41,14 @@ export interface IssueDetail {
   type: IssueType;
   description: string;
   status: IssueStatus;
-  refundStatus: RefundStatus;
+  refund: {
+    status: RefundStatus;
+    method: 'RAZORPAY' | 'FELBO_COINS' | null;
+    amount: number | null;
+    coins: number | null;
+    refundId: string | null;
+  };
   userLocation: { lat: number; lng: number } | null;
-  photoUrl: string | null;
   reviewedBy: string | null;
   adminNote: string | null;
   createdAt: string;

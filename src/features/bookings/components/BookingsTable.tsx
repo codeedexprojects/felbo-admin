@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, ChangeEvent } from 'react';
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
-import { Search, CalendarDays, CheckCircle2, Ban, Calendar } from 'lucide-react';
+import { Search, CalendarDays, CheckCircle2, Ban, Calendar as CalendarIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,11 +21,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ModernDatePicker } from '@/components/ui/modern-date-picker';
 import { useBookings } from '../hooks';
 import { createBookingColumns } from './BookingColumns';
 import { useMounted } from '@/hooks/use-mounted';
 import { useDebounce } from '@/hooks/useDebounce';
 import { ListBookingsFilter } from '../types';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 import { useAuthStore } from '@/stores/authStore';
 
@@ -90,7 +95,7 @@ export function BookingsTable() {
     {
       label: 'Confirmed',
       value: 0, // Not supported by backend yet
-      icon: Calendar,
+      icon: CalendarIcon,
       color: 'text-orange-500',
       bg: 'bg-orange-50',
     },
@@ -116,8 +121,8 @@ export function BookingsTable() {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   };
 
-  const handleDateChange = (e: ChangeEvent<HTMLInputElement>, type: 'startDate' | 'endDate') => {
-    const val = e.target.value || undefined;
+  const handleDateChange = (date: Date | undefined, type: 'startDate' | 'endDate') => {
+    const val = date ? format(date, 'yyyy-MM-dd') : undefined;
     setFilter((prev) => ({ ...prev, [type]: val, page: 1 }));
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   };
@@ -188,21 +193,51 @@ export function BookingsTable() {
         </Select>
 
         <div className="flex items-center gap-2">
-          <Input
-            type="date"
-            className="h-10 text-sm w-[140px] border-border/60 bg-muted/30"
-            value={filter.startDate || ''}
-            onChange={(e) => handleDateChange(e, 'startDate')}
-            title="Start Date"
-          />
-          <span className="text-sm text-muted-foreground">-</span>
-          <Input
-            type="date"
-            className="h-10 text-sm w-[140px] border-border/60 bg-muted/30"
-            value={filter.endDate || ''}
-            onChange={(e) => handleDateChange(e, 'endDate')}
-            title="End Date"
-          />
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  'h-10 w-[140px] px-3 text-xs font-normal border-border/60 bg-muted/30 justify-start',
+                  !filter.startDate && 'text-muted-foreground'
+                )}
+              >
+                <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                {filter.startDate
+                  ? format(new Date(filter.startDate), 'dd MMM yyyy')
+                  : 'Start Date'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[320px] p-0" align="start">
+              <ModernDatePicker
+                selected={filter.startDate ? new Date(filter.startDate) : undefined}
+                onSelect={(date) => handleDateChange(date, 'startDate')}
+              />
+            </PopoverContent>
+          </Popover>
+
+          <span className="text-muted-foreground">-</span>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  'h-10 w-[140px] px-3 text-xs font-normal border-border/60 bg-muted/30 justify-start',
+                  !filter.endDate && 'text-muted-foreground'
+                )}
+              >
+                <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                {filter.endDate ? format(new Date(filter.endDate), 'dd MMM yyyy') : 'End Date'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[320px] p-0" align="start">
+              <ModernDatePicker
+                selected={filter.endDate ? new Date(filter.endDate) : undefined}
+                onSelect={(date) => handleDateChange(date, 'endDate')}
+              />
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 

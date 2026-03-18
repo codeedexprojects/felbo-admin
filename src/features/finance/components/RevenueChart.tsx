@@ -28,7 +28,10 @@ const PERIODS: { label: string; value: FinancePeriod }[] = [
 
 function fmt(n: number) {
   if (n >= 1000) return `₹${(n / 1000).toFixed(1)}k`;
-  return `₹${n}`;
+  return `₹${Number(n.toFixed(2)).toLocaleString('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 interface CustomTooltipProps {
@@ -52,7 +55,12 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
             {entry.name}
           </span>
           <span className="font-medium tabular-nums text-foreground">
-            {entry.name === 'Bookings' ? entry.value : `₹${entry.value}`}
+            {entry.name === 'Bookings'
+              ? entry.value.toLocaleString('en-IN')
+              : `₹${entry.value.toLocaleString('en-IN', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}`}
           </span>
         </div>
       ))}
