@@ -21,7 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ModernDatePicker } from '@/components/ui/modern-date-picker';
 import { useBookings } from '../hooks';
@@ -208,7 +207,7 @@ export function BookingsTable() {
                   : 'Start Date'}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[320px] p-0" align="start">
+            <PopoverContent className="w-auto p-0" align="start">
               <ModernDatePicker
                 selected={filter.startDate ? new Date(filter.startDate) : undefined}
                 onSelect={(date) => handleDateChange(date, 'startDate')}
@@ -231,7 +230,7 @@ export function BookingsTable() {
                 {filter.endDate ? format(new Date(filter.endDate), 'dd MMM yyyy') : 'End Date'}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[320px] p-0" align="start">
+            <PopoverContent className="w-auto p-0" align="start">
               <ModernDatePicker
                 selected={filter.endDate ? new Date(filter.endDate) : undefined}
                 onSelect={(date) => handleDateChange(date, 'endDate')}

@@ -12,6 +12,7 @@ import {
   Banknote,
   LayoutGrid,
   ClipboardCheck,
+  UserCircle,
 } from 'lucide-react';
 import { AdminRole } from '@/types/api';
 
@@ -92,6 +93,12 @@ export const navItems: NavItem[] = [
     href: '/dashboard/categories',
     icon: LayoutGrid,
     roles: ['SUPER_ADMIN'],
+  },
+  {
+    title: 'Avatar Bank',
+    href: '/dashboard/avatars',
+    icon: UserCircle,
+    roles: ['SUPER_ADMIN', 'SUB_ADMIN'],
   },
   {
     title: 'System Config',

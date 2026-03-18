@@ -101,6 +101,8 @@ export interface PayoutAssocSummaryDto {
 
 export interface PayoutListFilter {
   status?: PayoutStatus;
+  from?: string;
+  to?: string;
   page?: number;
   limit?: number;
 }

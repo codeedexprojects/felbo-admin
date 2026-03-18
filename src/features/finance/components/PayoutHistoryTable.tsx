@@ -2,8 +2,19 @@
 
 import React, { useState } from 'react';
 import { flexRender, getCoreRowModel, useReactTable, ColumnDef } from '@tanstack/react-table';
-import { CheckCircle2, AlertTriangle, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  CheckCircle2,
+  AlertTriangle,
+  Clock,
+  ChevronLeft,
+  ChevronRight,
+  Calendar,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ModernDatePicker } from '@/components/ui/modern-date-picker';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
@@ -160,30 +171,83 @@ export function PayoutHistoryTable() {
 
   if (!mounted) return null;
 
+  const handleDateChange = (date: Date | undefined, key: 'from' | 'to') => {
+    const val = date ? format(date, 'yyyy-MM-dd') : undefined;
+    setFilter((prev) => ({ ...prev, [key]: val, page: 1 }));
+  };
+
   return (
     <>
       {/* Status filter & Error Banner */}
       <div className="flex flex-col gap-3">
-        <Select
-          value={filter.status ?? 'ALL'}
-          onValueChange={(v) =>
-            setFilter((f) => ({
-              ...f,
-              status: v === 'ALL' ? undefined : (v as PayoutStatus),
-              page: 1,
-            }))
-          }
-        >
-          <SelectTrigger className="h-9 w-40 text-sm border-border/60">
-            <SelectValue placeholder="All statuses" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ALL">All statuses</SelectItem>
-            <SelectItem value="PENDING">Pending</SelectItem>
-            <SelectItem value="ACCEPTED">Accepted</SelectItem>
-            <SelectItem value="REJECTED">Rejected</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex flex-wrap items-center gap-2">
+          <Select
+            value={filter.status ?? 'ALL'}
+            onValueChange={(v) =>
+              setFilter((f) => ({
+                ...f,
+                status: v === 'ALL' ? undefined : (v as PayoutStatus),
+                page: 1,
+              }))
+            }
+          >
+            <SelectTrigger className="h-9 w-40 text-sm border-border/60">
+              <SelectValue placeholder="All statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All statuses</SelectItem>
+              <SelectItem value="PENDING">Pending</SelectItem>
+              <SelectItem value="ACCEPTED">Accepted</SelectItem>
+              <SelectItem value="REJECTED">Rejected</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <div className="flex items-center gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    'h-9 w-[140px] px-3 text-xs font-normal border-border/60 bg-muted/30 justify-start',
+                    !filter.from && 'text-muted-foreground'
+                  )}
+                >
+                  <Calendar className="mr-2 h-3.5 w-3.5" />
+                  {filter.from ? format(new Date(filter.from), 'dd MMM yyyy') : 'From Date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <ModernDatePicker
+                  selected={filter.from ? new Date(filter.from) : undefined}
+                  onSelect={(date) => handleDateChange(date, 'from')}
+                />
+              </PopoverContent>
+            </Popover>
+
+            <span className="text-muted-foreground text-sm">–</span>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    'h-9 w-[140px] px-3 text-xs font-normal border-border/60 bg-muted/30 justify-start',
+                    !filter.to && 'text-muted-foreground'
+                  )}
+                >
+                  <Calendar className="mr-2 h-3.5 w-3.5" />
+                  {filter.to ? format(new Date(filter.to), 'dd MMM yyyy') : 'To Date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <ModernDatePicker
+                  selected={filter.to ? new Date(filter.to) : undefined}
+                  onSelect={(date) => handleDateChange(date, 'to')}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
 
         {acceptMutation.isError && (
           <div className="rounded-md bg-rose-50 p-3 text-sm text-rose-600 border border-rose-100 flex items-start gap-2">
