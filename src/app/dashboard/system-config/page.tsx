@@ -9,6 +9,7 @@ import {
   Search,
   AlertCircle,
   Coins,
+  Store,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { RoleGuard } from '@/components/layout/RoleGuard';
@@ -18,6 +19,7 @@ import { AbuseLimits } from '@/features/system-config/components/AbuseLimits';
 import { SearchSettings } from '@/features/system-config/components/SearchSettings';
 import { IssueSettings } from '@/features/system-config/components/IssueSettings';
 import { FelboCoinSettings } from '@/features/system-config/components/FelboCoinSettings';
+import { VendorSettings } from '@/features/system-config/components/VendorSettings';
 import {
   Select,
   SelectContent,
@@ -26,7 +28,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-type ConfigSection = 'booking' | 'cancellation' | 'abuse' | 'search' | 'issue' | 'felbocoin';
+type ConfigSection =
+  | 'booking'
+  | 'cancellation'
+  | 'abuse'
+  | 'search'
+  | 'issue'
+  | 'felbocoin'
+  | 'vendor';
 
 export default function SystemConfigPage() {
   const [activeSection, setActiveSection] = useState<ConfigSection>('booking');
@@ -90,6 +99,12 @@ export default function SystemConfigPage() {
                   <span>FelboCoin Settings</span>
                 </div>
               </SelectItem>
+              <SelectItem value="vendor">
+                <div className="flex items-center gap-2">
+                  <Store className="h-4 w-4 text-pink-500" />
+                  <span>Vendor Settings</span>
+                </div>
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -115,6 +130,7 @@ export default function SystemConfigPage() {
           {activeSection === 'search' && <SearchSettings />}
           {activeSection === 'issue' && <IssueSettings />}
           {activeSection === 'felbocoin' && <FelboCoinSettings />}
+          {activeSection === 'vendor' && <VendorSettings />}
         </div>
       </div>
     </RoleGuard>
