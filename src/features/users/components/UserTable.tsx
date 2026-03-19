@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
-import { Search, Users, CheckCircle2, Ban } from 'lucide-react';
+import { Search, Users, CheckCircle2, Ban, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -128,6 +128,14 @@ export function UserTable() {
     state: { pagination },
   });
 
+  const isFiltered = !!(searchValue || filter.status);
+
+  const handleClearFilters = () => {
+    setSearchValue('');
+    setFilter({ page: 1, limit: 10 });
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  };
+
   if (!mounted) return null;
 
   // Summary stats
@@ -216,6 +224,18 @@ export function UserTable() {
             </SelectItem>
           </SelectContent>
         </Select>
+
+        {isFiltered && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleClearFilters}
+            className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" />
+            Clear
+          </Button>
+        )}
       </div>
 
       {/* Main Table Card */}

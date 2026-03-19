@@ -82,6 +82,22 @@ export function TablePagination({ pageIndex, totalPages, onPageChange }: TablePa
       >
         <ChevronRight className="h-4 w-4" />
       </Button>
+
+      {/* Go to page */}
+      <span className="ml-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+        Go to
+        <select
+          value={current}
+          onChange={(e) => onPageChange(Number(e.target.value) - 1)}
+          className="h-8 rounded-md border border-border/60 bg-background px-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+        >
+          {Array.from({ length: totalPages }, (_, i) => (
+            <option key={i + 1} value={i + 1}>
+              {i + 1}
+            </option>
+          ))}
+        </select>
+      </span>
     </div>
   );
 }

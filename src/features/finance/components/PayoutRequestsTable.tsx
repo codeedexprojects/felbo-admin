@@ -9,11 +9,11 @@ import {
   Clock,
   AlertTriangle,
   Send,
-  ChevronLeft,
-  ChevronRight,
   Calendar,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { TablePagination } from '@/components/ui/table-pagination';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ModernDatePicker } from '@/components/ui/modern-date-picker';
 import { format } from 'date-fns';
@@ -310,6 +310,18 @@ export function PayoutRequestsTable() {
               </PopoverContent>
             </Popover>
           </div>
+
+          {(filter.status || filter.from || filter.to) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setFilter({ page: 1, limit: 10 })}
+              className="h-9 gap-1.5 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-3.5 w-3.5" />
+              Clear
+            </Button>
+          )}
         </div>
 
         <AlertDialog
@@ -430,35 +442,18 @@ export function PayoutRequestsTable() {
             </TableBody>
           </Table>
         </div>
+      </div>
 
-        <div className="flex items-center justify-between border-t border-border/40 bg-muted/20 px-4 py-3">
-          <p className="text-xs text-muted-foreground">
-            Page <span className="font-medium text-foreground">{filter.page}</span> of{' '}
-            <span className="font-medium text-foreground">{data?.totalPages ?? '—'}</span>
-            {' · '}
-            <span className="font-medium text-foreground">{data?.total ?? 0}</span> total
-          </p>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 gap-1"
-              disabled={(filter.page ?? 1) <= 1}
-              onClick={() => setFilter((f) => ({ ...f, page: (f.page ?? 1) - 1 }))}
-            >
-              <ChevronLeft className="h-3.5 w-3.5" /> Prev
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 gap-1"
-              disabled={(filter.page ?? 1) >= (data?.totalPages ?? 1)}
-              onClick={() => setFilter((f) => ({ ...f, page: (f.page ?? 1) + 1 }))}
-            >
-              Next <ChevronRight className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-        </div>
+      {/* Pagination */}
+      <div className="flex items-center justify-between px-1">
+        <p className="text-xs text-muted-foreground">
+          {(data?.total ?? 0) > 0 ? `${data?.total} records` : 'No records'}
+        </p>
+        <TablePagination
+          pageIndex={(filter.page ?? 1) - 1}
+          totalPages={data?.totalPages ?? 1}
+          onPageChange={(idx) => setFilter((f) => ({ ...f, page: idx + 1 }))}
+        />
       </div>
     </div>
   );

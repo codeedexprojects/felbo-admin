@@ -2,9 +2,17 @@
 
 import React, { useState, useEffect, useMemo, ChangeEvent } from 'react';
 import { flexRender, getCoreRowModel, useReactTable, ColumnDef } from '@tanstack/react-table';
-import { Download, ArrowUpDown, ArrowUp, ArrowDown, Calendar as CalendarIcon } from 'lucide-react';
+import {
+  Download,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  Calendar as CalendarIcon,
+  X,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { TablePagination } from '@/components/ui/table-pagination';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ModernDatePicker } from '@/components/ui/modern-date-picker';
 import { format } from 'date-fns';
@@ -91,6 +99,8 @@ export function RevenueReportsTable() {
   });
   const [search, setSearch] = useState('');
   const [searchDebounced, setSearchDebounced] = useState('');
+  const [minVal, setMinVal] = useState('');
+  const [maxVal, setMaxVal] = useState('');
 
   // Debounce search 400ms
   useEffect(() => {
@@ -282,15 +292,45 @@ export function RevenueReportsTable() {
             type="number"
             placeholder="Min ₹"
             className="h-10 w-[90px] text-sm border-border/60 bg-muted/30"
-            onChange={(e) => handleMinMax(e, 'minRevenue')}
+            value={minVal}
+            onChange={(e) => {
+              setMinVal(e.target.value);
+              handleMinMax(e, 'minRevenue');
+            }}
           />
           <Input
             type="number"
             placeholder="Max ₹"
             className="h-10 w-[90px] text-sm border-border/60 bg-muted/30"
-            onChange={(e) => handleMinMax(e, 'maxRevenue')}
+            value={maxVal}
+            onChange={(e) => {
+              setMaxVal(e.target.value);
+              handleMinMax(e, 'maxRevenue');
+            }}
           />
         </div>
+
+        {(search ||
+          filter.period !== 'month' ||
+          filter.from ||
+          filter.to ||
+          filter.minRevenue ||
+          filter.maxRevenue) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSearch('');
+              setMinVal('');
+              setMaxVal('');
+              setFilter({ period: 'month', page: 1, limit: 10, sortOrder: filter.sortOrder });
+            }}
+            className="h-10 gap-1.5 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" />
+            Clear
+          </Button>
+        )}
 
         <div className="ml-auto flex items-center gap-2">
           {/* Sort toggle */}
@@ -375,41 +415,18 @@ export function RevenueReportsTable() {
             </TableBody>
           </Table>
         </div>
+      </div>
 
-        {/* Pagination */}
-        <div className="flex items-center justify-between border-t border-border/40 bg-muted/20 px-4 py-3">
-          <p className="text-xs text-muted-foreground">
-            Showing{' '}
-            <span className="font-medium text-foreground">
-              {data?.total === 0 ? 0 : ((filter.page ?? 1) - 1) * (filter.limit ?? 10) + 1}
-            </span>{' '}
-            to{' '}
-            <span className="font-medium text-foreground">
-              {Math.min((filter.page ?? 1) * (filter.limit ?? 10), data?.total ?? 0)}
-            </span>{' '}
-            of <span className="font-medium text-foreground">{data?.total ?? 0}</span> vendors
-          </p>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 border-border/60"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 border-border/60"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
+      {/* Pagination */}
+      <div className="flex items-center justify-between px-1">
+        <p className="text-xs text-muted-foreground">
+          {(data?.total ?? 0) > 0 ? `${data?.total} vendors` : 'No vendors'}
+        </p>
+        <TablePagination
+          pageIndex={(filter.page ?? 1) - 1}
+          totalPages={data?.totalPages || 1}
+          onPageChange={(idx) => setFilter((prev) => ({ ...prev, page: idx + 1 }))}
+        />
       </div>
     </div>
   );
