@@ -2,10 +2,11 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
-import { Users, Ban, CheckCircle2, Clock, Search } from 'lucide-react';
+import { Users, Ban, CheckCircle2, Clock, Search, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { TablePagination } from '@/components/ui/table-pagination';
 import {
   Table,
   TableBody,
@@ -79,6 +80,14 @@ export function AssociationVendorTable() {
     onPaginationChange: setPagination,
     state: { pagination },
   });
+
+  const isFiltered = !!(searchValue || filter.status || filter.verificationStatus);
+
+  const handleClearFilters = () => {
+    setSearchValue('');
+    setFilter({ page: 1, limit: 10 });
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  };
 
   if (!mounted) return null;
 
@@ -192,6 +201,18 @@ export function AssociationVendorTable() {
             <SelectItem value="REJECTED">Rejected</SelectItem>
           </SelectContent>
         </Select>
+
+        {isFiltered && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleClearFilters}
+            className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" />
+            Clear
+          </Button>
+        )}
       </div>
 
       {/* Table */}
@@ -259,29 +280,15 @@ export function AssociationVendorTable() {
       {/* Pagination */}
       <div className="flex items-center justify-between px-1">
         <p className="text-xs text-muted-foreground">
-          Page {pagination.pageIndex + 1} of {data?.totalPages || 1}
-          {(data?.total ?? 0) > 0 && ` · ${data?.total} vendors`}
+          {(counts?.total ?? data?.total ?? 0) > 0
+            ? `${counts?.total ?? data?.total} vendors`
+            : 'No vendors'}
         </p>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 text-xs border-border/60"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 text-xs border-border/60"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Next
-          </Button>
-        </div>
+        <TablePagination
+          pageIndex={pagination.pageIndex}
+          totalPages={data?.totalPages || 1}
+          onPageChange={(idx) => setPagination((prev) => ({ ...prev, pageIndex: idx }))}
+        />
       </div>
     </div>
   );

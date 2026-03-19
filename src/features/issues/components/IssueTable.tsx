@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
-import { AlertOctagon, Ban, CheckCircle2, Clock } from 'lucide-react';
+import { AlertOctagon, Ban, CheckCircle2, Clock, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { TablePagination } from '@/components/ui/table-pagination';
 import {
   Table,
@@ -164,6 +165,21 @@ export function IssueTable() {
             <SelectItem value="OTHER">Other</SelectItem>
           </SelectContent>
         </Select>
+
+        {(filter.status || filter.type) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setFilter({ page: 1, limit: 10 });
+              setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+            }}
+            className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" />
+            Clear
+          </Button>
+        )}
       </div>
 
       {/* Table */}

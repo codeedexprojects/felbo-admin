@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
-import { Search, Users, CheckCircle2, Clock, Ban } from 'lucide-react';
+import { Search, Users, CheckCircle2, Clock, Ban, X } from 'lucide-react';
 
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { TablePagination } from '@/components/ui/table-pagination';
 import {
@@ -135,6 +136,21 @@ export function VendorVerificationTable() {
             onChange={(e) => setSearchValue(e.target.value)}
           />
         </div>
+
+        {!!searchValue && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSearchValue('');
+              setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+            }}
+            className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" />
+            Clear
+          </Button>
+        )}
       </div>
 
       {/* Table */}

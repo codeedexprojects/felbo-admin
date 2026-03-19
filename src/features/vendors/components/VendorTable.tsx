@@ -2,8 +2,9 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
-import { Search, Users, CheckCircle2, Clock, Ban } from 'lucide-react';
+import { Search, Users, CheckCircle2, Clock, Ban, X } from 'lucide-react';
 
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { TablePagination } from '@/components/ui/table-pagination';
 import {
@@ -108,6 +109,14 @@ export function VendorTable() {
     },
   ];
 
+  const isFiltered = !!(searchValue || filter.status || filter.verificationStatus);
+
+  const handleClearFilters = () => {
+    setSearchValue('');
+    setFilter({ page: 1, limit: 10 });
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  };
+
   return (
     <div className="space-y-5">
       {/* Stat cards */}
@@ -187,6 +196,18 @@ export function VendorTable() {
             <SelectItem value="REJECTED">Rejected</SelectItem>
           </SelectContent>
         </Select>
+
+        {isFiltered && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleClearFilters}
+            className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" />
+            Clear
+          </Button>
+        )}
       </div>
 
       {/* Table */}

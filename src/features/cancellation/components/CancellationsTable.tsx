@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, ChangeEvent } from 'react';
+import React, { useState, useEffect } from 'react';
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
-import { Search, CalendarDays, CheckCircle2, Ban, Calendar as CalendarIcon, X } from 'lucide-react';
+import { Search, Calendar as CalendarIcon, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,15 +24,13 @@ import {
 } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ModernDatePicker } from '@/components/ui/modern-date-picker';
-import { useBookings } from '../hooks';
-import { createBookingColumns } from './BookingColumns';
+import { useCancellations } from '../hooks';
+import { cancellationColumns } from './CancellationColumns';
 import { useMounted } from '@/hooks/use-mounted';
 import { useDebounce } from '@/hooks/useDebounce';
-import { ListBookingsFilter } from '../types';
+import { ListCancellationsFilter } from '../types';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-
-import { useAuthStore } from '@/stores/authStore';
 
 function SkeletonRow({ cols }: { cols: number }) {
   return (
@@ -46,13 +44,12 @@ function SkeletonRow({ cols }: { cols: number }) {
   );
 }
 
-export function BookingsTable() {
-  const { admin } = useAuthStore();
+export function CancellationsTable() {
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
   const [searchValue, setSearchValue] = useState('');
   const debouncedSearch = useDebounce(searchValue, 500);
 
-  const [filter, setFilter] = useState<ListBookingsFilter>({
+  const [filter, setFilter] = useState<ListCancellationsFilter>({
     page: 1,
     limit: 10,
   });
@@ -66,15 +63,13 @@ export function BookingsTable() {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   }, [debouncedSearch]);
 
-  const { data, isLoading, isError } = useBookings(filter);
+  const { data, isLoading, isError } = useCancellations(filter);
   const mounted = useMounted();
-
-  const columns = useMemo(() => createBookingColumns(admin?.role), [admin?.role]);
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
-    data: data?.bookings || [],
-    columns,
+    data: data?.cancellations || [],
+    columns: cancellationColumns,
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
     pageCount: data?.totalPages || -1,
@@ -84,40 +79,9 @@ export function BookingsTable() {
 
   if (!mounted) return null;
 
-  const stats = [
-    {
-      label: 'Total Bookings',
-      value: data?.total ?? 0,
-      icon: CalendarDays,
-      color: 'text-blue-600',
-      bg: 'bg-blue-50',
-    },
-    {
-      label: 'Confirmed',
-      value: 0, // Not supported by backend yet
-      icon: CalendarIcon,
-      color: 'text-orange-500',
-      bg: 'bg-orange-50',
-    },
-    {
-      label: 'Completed',
-      value: 0, // Not supported by backend yet
-      icon: CheckCircle2,
-      color: 'text-emerald-600',
-      bg: 'bg-emerald-50',
-    },
-    {
-      label: 'Cancelled',
-      value: 0, // Not supported by backend yet
-      icon: Ban,
-      color: 'text-red-500',
-      bg: 'bg-red-50',
-    },
-  ];
-
-  const handleStatusChange = (value: string) => {
-    const newStatus = value === 'ALL' ? undefined : value;
-    setFilter((prev) => ({ ...prev, status: newStatus, page: 1 }));
+  const handleCancelledByChange = (value: string) => {
+    const newValue = value === 'ALL' ? undefined : (value as 'USER' | 'VENDOR');
+    setFilter((prev) => ({ ...prev, cancelledBy: newValue, page: 1 }));
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   };
 
@@ -127,7 +91,7 @@ export function BookingsTable() {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   };
 
-  const isFiltered = !!(searchValue || filter.status || filter.startDate || filter.endDate);
+  const isFiltered = !!(searchValue || filter.cancelledBy || filter.startDate || filter.endDate);
 
   const handleClearFilters = () => {
     setSearchValue('');
@@ -137,65 +101,31 @@ export function BookingsTable() {
 
   return (
     <div className="space-y-5">
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {stats.map((stat) => (
-          <div
-            key={stat.label}
-            className="flex items-center gap-3 rounded-xl border border-border/60 bg-card p-4 shadow-sm"
-          >
-            <div
-              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${stat.bg}`}
-            >
-              <stat.icon className={`h-4 w-4 ${stat.color}`} />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">{stat.label}</p>
-              <p className="text-xl font-semibold text-foreground">
-                {isLoading ? '—' : stat.value}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
-
       {/* Filter bar */}
       <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/60 bg-card px-4 py-3 shadow-sm">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search bookings..."
+            placeholder="Search by booking ID, shop, phone..."
             className="pl-9 h-10 text-sm border-border/60 bg-muted/30 focus-visible:bg-background"
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
           />
         </div>
 
-        <Select value={filter.status || 'ALL'} onValueChange={handleStatusChange}>
+        <Select value={filter.cancelledBy || 'ALL'} onValueChange={handleCancelledByChange}>
           <SelectTrigger className="w-[160px] h-10 text-sm border-border/60 bg-muted/30">
-            <SelectValue placeholder="All Status" />
+            <SelectValue placeholder="Cancelled By" />
           </SelectTrigger>
           <SelectContent align="end">
             <SelectItem value="ALL" className="text-sm">
-              All Status
+              All
             </SelectItem>
-            <SelectItem value="CONFIRMED" className="text-sm">
-              Confirmed
+            <SelectItem value="USER" className="text-sm">
+              By User
             </SelectItem>
-            <SelectItem value="COMPLETED" className="text-sm">
-              Completed
-            </SelectItem>
-            <SelectItem value="CANCELLED_BY_USER" className="text-sm">
-              Cancelled (User)
-            </SelectItem>
-            <SelectItem value="CANCELLED_BY_VENDOR" className="text-sm">
-              Cancelled (Vendor)
-            </SelectItem>
-            <SelectItem value="NO_SHOW" className="text-sm">
-              No Show
-            </SelectItem>
-            <SelectItem value="PENDING_PAYMENT" className="text-sm">
-              Pending Payment
+            <SelectItem value="VENDOR" className="text-sm">
+              By Vendor
             </SelectItem>
           </SelectContent>
         </Select>
@@ -284,13 +214,13 @@ export function BookingsTable() {
             <TableBody className="text-sm">
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                  <SkeletonRow key={i} cols={columns.length} />
+                  <SkeletonRow key={i} cols={cancellationColumns.length} />
                 ))
               ) : isError ? (
                 <TableRow>
-                  <TableCell colSpan={columns.length} className="h-32 text-center">
+                  <TableCell colSpan={cancellationColumns.length} className="h-32 text-center">
                     <div className="flex flex-col items-center justify-center text-red-500">
-                      <p className="font-medium">Failed to load bookings</p>
+                      <p className="font-medium">Failed to load cancellations</p>
                       <p className="text-xs text-red-400">Please try refreshing the page</p>
                     </div>
                   </TableCell>
@@ -311,10 +241,10 @@ export function BookingsTable() {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={columns.length}
+                    colSpan={cancellationColumns.length}
                     className="h-32 text-center text-muted-foreground"
                   >
-                    No bookings found matching your filters.
+                    No cancellations found matching your filters.
                   </TableCell>
                 </TableRow>
               )}
@@ -326,7 +256,7 @@ export function BookingsTable() {
       {/* Pagination */}
       <div className="flex items-center justify-between px-1">
         <p className="text-xs text-muted-foreground">
-          {(data?.total ?? 0) > 0 ? `${data?.total} bookings` : 'No bookings'}
+          {(data?.total ?? 0) > 0 ? `${data?.total} cancellations` : 'No cancellations'}
         </p>
         <TablePagination
           pageIndex={pagination.pageIndex}

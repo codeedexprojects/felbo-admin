@@ -2,11 +2,12 @@
 
 import { useState, useMemo } from 'react';
 import { flexRender, getCoreRowModel, useReactTable, ColumnDef } from '@tanstack/react-table';
-import { IndianRupee, Receipt, Calendar as CalendarIcon } from 'lucide-react';
+import { IndianRupee, Receipt, Calendar as CalendarIcon, X } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ModernDatePicker } from '@/components/ui/modern-date-picker';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
+import { TablePagination } from '@/components/ui/table-pagination';
 import {
   Table,
   TableBody,
@@ -252,6 +253,21 @@ export function RefundsTable() {
             </PopoverContent>
           </Popover>
         </div>
+
+        {(typeFilter !== 'ALL' || filter.from || filter.to) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setTypeFilter('ALL');
+              setFilter({ page: 1, limit: 10 });
+            }}
+            className="h-10 gap-1.5 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" />
+            Clear
+          </Button>
+        )}
       </div>
 
       {/* Table */}
@@ -311,41 +327,18 @@ export function RefundsTable() {
             </TableBody>
           </Table>
         </div>
+      </div>
 
-        {/* Pagination */}
-        <div className="flex items-center justify-between border-t border-border/40 bg-muted/20 px-4 py-3">
-          <p className="text-xs text-muted-foreground">
-            Showing{' '}
-            <span className="font-medium text-foreground">
-              {data?.total === 0 ? 0 : ((filter.page ?? 1) - 1) * (filter.limit ?? 10) + 1}
-            </span>{' '}
-            to{' '}
-            <span className="font-medium text-foreground">
-              {Math.min((filter.page ?? 1) * (filter.limit ?? 10), data?.total ?? 0)}
-            </span>{' '}
-            of <span className="font-medium text-foreground">{data?.total ?? 0}</span> refunds
-          </p>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 border-border/60"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 border-border/60"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
+      {/* Pagination */}
+      <div className="flex items-center justify-between px-1">
+        <p className="text-xs text-muted-foreground">
+          {(data?.total ?? 0) > 0 ? `${data?.total} refunds` : 'No refunds'}
+        </p>
+        <TablePagination
+          pageIndex={(filter.page ?? 1) - 1}
+          totalPages={data?.totalPages || 1}
+          onPageChange={(idx) => setFilter((prev) => ({ ...prev, page: idx + 1 }))}
+        />
       </div>
     </div>
   );
