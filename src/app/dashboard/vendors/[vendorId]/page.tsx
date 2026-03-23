@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useVendorDetail } from '@/features/vendors/hooks';
+import { useVendorDetail, useVendorBookings } from '@/features/vendors/hooks';
 import { WorkingHours } from '@/features/vendors/types';
 import { RoleGuard } from '@/components/layout/RoleGuard';
 import { Button } from '@/components/ui/button';
@@ -26,9 +26,330 @@ import {
   ChevronDown,
   ChevronUp,
   Image as ImageIcon,
+  CalendarDays,
+  Calendar as CalendarIcon,
+  X,
 } from 'lucide-react';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ModernDatePicker } from '@/components/ui/modern-date-picker';
+import { TablePagination } from '@/components/ui/table-pagination';
+import { ColumnDef } from '@tanstack/react-table';
+import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
+import { Eye } from 'lucide-react';
+import { VendorBookingListItem } from '@/features/vendors/types';
+import { ListBookingsFilter } from '@/features/bookings/types';
+import { useAuthStore } from '@/stores/authStore';
+import { useSetPageTitle } from '@/hooks/useSetPageTitle';
+
+// ─── Vendor Bookings Section ──────────────────────────────────────────────────
+function SkeletonRow({ cols }: { cols: number }) {
+  return (
+    <TableRow>
+      {Array.from({ length: cols }).map((_, i) => (
+        <TableCell key={i}>
+          <div className="h-4 w-full animate-pulse rounded bg-muted" />
+        </TableCell>
+      ))}
+    </TableRow>
+  );
+}
+
+const vendorBookingColumns: ColumnDef<VendorBookingListItem>[] = [
+  {
+    accessorKey: 'bookingNumber',
+    header: 'Booking #',
+    cell: ({ row }) => (
+      <span className="font-medium text-foreground">{row.original.bookingNumber}</span>
+    ),
+  },
+  {
+    accessorKey: 'userName',
+    header: 'Customer',
+    cell: ({ row }) => <span className="font-medium text-foreground">{row.original.userName}</span>,
+  },
+  {
+    accessorKey: 'shopName',
+    header: 'Shop',
+    cell: ({ row }) => <span className="text-foreground">{row.original.shopName}</span>,
+  },
+  {
+    accessorKey: 'barberName',
+    header: 'Barber',
+    cell: ({ row }) => <span className="text-foreground">{row.original.barberName}</span>,
+  },
+  {
+    accessorKey: 'datetime',
+    header: 'Date & Time',
+    cell: ({ row }) => (
+      <div className="flex flex-col">
+        <span className="font-medium text-foreground">
+          {format(new Date(row.original.date), 'dd MMM yyyy')}
+        </span>
+        <span className="text-xs text-muted-foreground">{row.original.startTime}</span>
+      </div>
+    ),
+  },
+  {
+    accessorKey: 'status',
+    header: 'Status',
+    cell: ({ row }) => {
+      const status = row.original.status;
+      return (
+        <Badge
+          variant={
+            status === 'COMPLETED'
+              ? 'default'
+              : status === 'CONFIRMED'
+                ? 'secondary'
+                : 'destructive'
+          }
+          className={`text-[10px] ${status === 'COMPLETED' ? 'bg-emerald-500 hover:bg-emerald-600' : ''}`}
+        >
+          {status.replace(/_/g, ' ')}
+        </Badge>
+      );
+    },
+  },
+  {
+    id: 'actions',
+    header: 'Actions',
+    cell: ({ row }) => (
+      <Button variant="ghost" size="sm" asChild>
+        <Link href={`/dashboard/bookings/${row.original.id}`} className="gap-2">
+          <Eye className="h-4 w-4" />
+          View
+        </Link>
+      </Button>
+    ),
+  },
+];
+
+function VendorBookingsSection({ vendorId }: { vendorId: string }) {
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+  const [filter, setFilter] = useState<ListBookingsFilter>({ page: 1, limit: 10 });
+
+  useEffect(() => {
+    setFilter((prev) => ({ ...prev, page: pagination.pageIndex + 1, limit: pagination.pageSize }));
+  }, [pagination]);
+
+  const { data, isLoading, isError } = useVendorBookings(vendorId, filter);
+  const columns = useMemo(() => vendorBookingColumns, []);
+
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const table = useReactTable({
+    data: data?.bookings || [],
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    manualPagination: true,
+    pageCount: data?.totalPages || -1,
+    onPaginationChange: setPagination,
+    state: { pagination },
+  });
+
+  const handleStatusChange = (value: string) => {
+    setFilter((prev) => ({ ...prev, status: value === 'ALL' ? undefined : value, page: 1 }));
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  };
+
+  const handleDateChange = (date: Date | undefined, type: 'startDate' | 'endDate') => {
+    const val = date ? format(date, 'yyyy-MM-dd') : undefined;
+    setFilter((prev) => ({ ...prev, [type]: val, page: 1 }));
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  };
+
+  const isFiltered = !!(filter.status || filter.startDate || filter.endDate);
+
+  return (
+    <Card className="border-border/60 shadow-sm">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+            <CalendarDays className="h-4 w-4" /> Bookings
+            {data && (
+              <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-normal text-muted-foreground">
+                {data.total}
+              </span>
+            )}
+          </CardTitle>
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={filter.status || 'ALL'} onValueChange={handleStatusChange}>
+              <SelectTrigger className="w-[160px] h-8 text-xs border-border/60 bg-muted/30">
+                <SelectValue placeholder="All Status" />
+              </SelectTrigger>
+              <SelectContent align="end">
+                <SelectItem value="ALL" className="text-xs">
+                  All Status
+                </SelectItem>
+                <SelectItem value="CONFIRMED" className="text-xs">
+                  Confirmed
+                </SelectItem>
+                <SelectItem value="COMPLETED" className="text-xs">
+                  Completed
+                </SelectItem>
+                <SelectItem value="CANCELLED_BY_USER" className="text-xs">
+                  Cancelled (User)
+                </SelectItem>
+                <SelectItem value="CANCELLED_BY_VENDOR" className="text-xs">
+                  Cancelled (Vendor)
+                </SelectItem>
+                <SelectItem value="NO_SHOW" className="text-xs">
+                  No Show
+                </SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    'h-8 w-[130px] px-2 text-xs font-normal border-border/60 bg-muted/30 justify-start',
+                    !filter.startDate && 'text-muted-foreground'
+                  )}
+                >
+                  <CalendarIcon className="mr-1.5 h-3 w-3" />
+                  {filter.startDate
+                    ? format(new Date(filter.startDate), 'dd MMM yyyy')
+                    : 'Start Date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <ModernDatePicker
+                  selected={filter.startDate ? new Date(filter.startDate) : undefined}
+                  onSelect={(date) => handleDateChange(date, 'startDate')}
+                />
+              </PopoverContent>
+            </Popover>
+
+            <span className="text-muted-foreground text-xs">—</span>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    'h-8 w-[130px] px-2 text-xs font-normal border-border/60 bg-muted/30 justify-start',
+                    !filter.endDate && 'text-muted-foreground'
+                  )}
+                >
+                  <CalendarIcon className="mr-1.5 h-3 w-3" />
+                  {filter.endDate ? format(new Date(filter.endDate), 'dd MMM yyyy') : 'End Date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <ModernDatePicker
+                  selected={filter.endDate ? new Date(filter.endDate) : undefined}
+                  onSelect={(date) => handleDateChange(date, 'endDate')}
+                />
+              </PopoverContent>
+            </Popover>
+
+            {isFiltered && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setFilter({ page: 1, limit: 10 });
+                  setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+                }}
+                className="h-8 gap-1 text-xs text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-3 w-3" /> Clear
+              </Button>
+            )}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3 p-0">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader className="bg-muted/40">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id} className="hover:bg-transparent border-border/40">
+                  {headerGroup.headers.map((header) => (
+                    <TableHead
+                      key={header.id}
+                      className="h-9 text-[10px] font-semibold tracking-wider text-muted-foreground uppercase"
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(header.column.columnDef.header, header.getContext())}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody className="text-sm">
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <SkeletonRow key={i} cols={columns.length} />
+                ))
+              ) : isError ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center text-red-500 text-sm"
+                  >
+                    Failed to load bookings.
+                  </TableCell>
+                </TableRow>
+              ) : table.getRowModel().rows.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow key={row.id} className="border-border/40 hover:bg-muted/30">
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id} className="p-3">
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center text-muted-foreground text-sm"
+                  >
+                    No bookings found.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+        <div className="flex items-center justify-between px-4 pb-4">
+          <p className="text-xs text-muted-foreground">
+            {(data?.total ?? 0) > 0 ? `${data?.total} bookings` : 'No bookings'}
+          </p>
+          <TablePagination
+            pageIndex={pagination.pageIndex}
+            totalPages={data?.totalPages || 1}
+            onPageChange={(idx) => setPagination((prev) => ({ ...prev, pageIndex: idx }))}
+          />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 // ─── Status pill ─────────────────────────────────────────────────────────────
 function StatusPill({ status, type }: { status: string; type: 'verification' | 'account' }) {
@@ -429,17 +750,20 @@ export default function VendorDetailsPage() {
   const { vendorId } = useParams<{ vendorId: string }>();
   const router = useRouter();
   const { data: vendor, isLoading, isError } = useVendorDetail(vendorId);
+  useSetPageTitle(vendor?.ownerName);
+  const { admin } = useAuthStore();
+  const canViewBookings = admin?.role === 'SUPER_ADMIN' || admin?.role === 'SUB_ADMIN';
 
   if (isLoading)
     return (
-      <RoleGuard allowedRoles={['SUPER_ADMIN', 'SUB_ADMIN']}>
+      <RoleGuard allowedRoles={['SUPER_ADMIN', 'SUB_ADMIN', 'ASSOCIATION_ADMIN']}>
         <DetailSkeleton />
       </RoleGuard>
     );
 
   if (isError || !vendor)
     return (
-      <RoleGuard allowedRoles={['SUPER_ADMIN', 'SUB_ADMIN']}>
+      <RoleGuard allowedRoles={['SUPER_ADMIN', 'SUB_ADMIN', 'ASSOCIATION_ADMIN']}>
         <div className="flex flex-col items-center gap-3 py-20 text-muted-foreground">
           <AlertTriangle className="h-8 w-8 opacity-40" />
           <p className="text-sm">Vendor not found or failed to load.</p>
@@ -451,7 +775,7 @@ export default function VendorDetailsPage() {
     );
 
   return (
-    <RoleGuard allowedRoles={['SUPER_ADMIN', 'SUB_ADMIN']}>
+    <RoleGuard allowedRoles={['SUPER_ADMIN', 'SUB_ADMIN', 'ASSOCIATION_ADMIN']}>
       <div className="space-y-6">
         {/* ── Header ── */}
         <div className="flex flex-wrap items-start gap-4">
@@ -580,6 +904,9 @@ export default function VendorDetailsPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* ── Bookings (SUPER_ADMIN / SUB_ADMIN only) ── */}
+        {canViewBookings && <VendorBookingsSection vendorId={vendorId} />}
       </div>
     </RoleGuard>
   );

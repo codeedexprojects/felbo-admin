@@ -38,6 +38,7 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { usePendingShopDetails, useApproveShop, useRejectShop } from '@/features/shops/hooks';
+import { useSetPageTitle } from '@/hooks/useSetPageTitle';
 import { IWorkingHours } from '@/features/shops/types';
 
 /* ─── Helpers ──────────────────────────────────────────────────────────────── */
@@ -173,6 +174,7 @@ export default function PendingShopDetailsPage() {
   const router = useRouter();
 
   const { data, isLoading, isError } = usePendingShopDetails(shopId);
+  useSetPageTitle(data?.name);
   const approveMutation = useApproveShop();
   const rejectMutation = useRejectShop();
 

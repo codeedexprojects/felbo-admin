@@ -25,6 +25,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { RoleGuard } from '@/components/layout/RoleGuard';
 import { useVendorRequestDetail, useVerifyVendor, useRejectVendor } from '@/features/vendors/hooks';
+import { useSetPageTitle } from '@/hooks/useSetPageTitle';
 import {
   Dialog,
   DialogContent,
@@ -155,6 +156,7 @@ export default function VendorRequestDetailPage() {
   const router = useRouter();
 
   const { data, isLoading, isError } = useVendorRequestDetail(id);
+  useSetPageTitle(data?.ownerName);
   const verifyMutation = useVerifyVendor();
   const rejectMutation = useRejectVendor();
 

@@ -201,3 +201,22 @@ export interface VendorRequestDetail {
     photos: string[];
   };
 }
+
+export interface VendorBookingListItem {
+  id: string;
+  bookingNumber: string;
+  userName: string;
+  shopName: string;
+  barberName: string;
+  date: string;
+  startTime: string;
+  status: string;
+}
+
+export interface VendorBookingListResponse {
+  bookings: VendorBookingListItem[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}

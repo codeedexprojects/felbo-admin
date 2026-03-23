@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { LogOut } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
+import { usePageTitleStore } from '@/stores/uiStore';
 import { MobileSidebar } from './MobileSidebar';
 import { useMounted } from '@/hooks/use-mounted';
 import { Button } from '@/components/ui/button';
@@ -23,18 +24,23 @@ import {
 export function Navbar() {
   const pathname = usePathname();
   const { admin, logout } = useAuthStore();
+  const pageTitle = usePageTitleStore((s) => s.pageTitle);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
   const getPageTitle = (path: string) => {
     const segments = path.split('/').filter(Boolean);
     if (segments.length === 0) return 'Dashboard';
     const lastSegment = segments[segments.length - 1];
-    if (lastSegment.match(/^[0-9a-fA-F-]{36}$/)) return 'Details';
+    // MongoDB ObjectId (24 hex) or UUID (36 chars with dashes)
+    if (lastSegment.match(/^[0-9a-fA-F]{24}$/) || lastSegment.match(/^[0-9a-fA-F-]{36}$/))
+      return 'Details';
     return lastSegment
       .split('-')
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
   };
+
+  const title = pageTitle || getPageTitle(pathname);
 
   const mounted = useMounted();
   if (!mounted) return null;
@@ -46,7 +52,7 @@ export function Navbar() {
       <div className="flex items-center gap-3">
         <MobileSidebar />
         <h1 className="text-sm font-semibold text-foreground hidden md:block tracking-tight">
-          {getPageTitle(pathname)}
+          {title}
         </h1>
       </div>
 

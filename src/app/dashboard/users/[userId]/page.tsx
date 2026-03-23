@@ -22,6 +22,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { useUserById } from '@/features/users/hooks';
+import { useSetPageTitle } from '@/hooks/useSetPageTitle';
 import { BookingListItem } from '@/features/bookings/types';
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -90,6 +91,7 @@ function UserDetailSkeleton() {
 export default function UserDetailPage({ params }: { params: { userId: string } }) {
   const { userId } = params;
   const { data: user, isLoading, isError } = useUserById(userId);
+  useSetPageTitle(user?.name);
 
   if (isLoading) return <UserDetailSkeleton />;
 

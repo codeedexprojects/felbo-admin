@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useBookingDetail, useProcessRefund } from '@/features/bookings/hooks';
+import { useSetPageTitle } from '@/hooks/useSetPageTitle';
 import {
   Dialog,
   DialogContent,
@@ -115,6 +116,7 @@ export default function BookingDetailPage() {
   const router = useRouter();
 
   const { data: booking, isLoading, isError } = useBookingDetail(id as string);
+  useSetPageTitle(booking?.bookingNumber);
   const refundMutation = useProcessRefund();
 
   const [refundOpen, setRefundOpen] = useState(false);

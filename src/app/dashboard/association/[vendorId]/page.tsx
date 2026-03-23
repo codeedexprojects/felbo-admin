@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useVendorDetail } from '@/features/vendors/hooks';
+import { useSetPageTitle } from '@/hooks/useSetPageTitle';
 import { RoleGuard } from '@/components/layout/RoleGuard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -318,6 +319,7 @@ export default function AssociationVendorDetailPage() {
   const { vendorId } = useParams<{ vendorId: string }>();
   const router = useRouter();
   const { data: vendor, isLoading, isError } = useVendorDetail(vendorId);
+  useSetPageTitle(vendor?.ownerName);
 
   if (isLoading)
     return (
