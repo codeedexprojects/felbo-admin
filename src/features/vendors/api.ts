@@ -6,7 +6,9 @@ import {
   VendorRequestDetail,
   VerificationRequestsFilter,
   VerificationRequestsResponse,
+  VendorBookingListResponse,
 } from './types';
+import { ListBookingsFilter } from '../bookings/types';
 import { ApiResponse } from '@/types/api';
 
 export const getVendorRequestDetail = async (id: string): Promise<VendorRequestDetail> => {
@@ -80,4 +82,24 @@ export const rejectVendor = async (id: string, reason: string): Promise<void> =>
   if (!response.data.success) {
     throw new Error(response.data.error?.message || 'Failed to reject vendor');
   }
+};
+
+export const getVendorBookings = async (
+  id: string,
+  filters: ListBookingsFilter = { page: 1, limit: 10 }
+): Promise<VendorBookingListResponse> => {
+  const params = new URLSearchParams();
+  params.append('page', (filters.page || 1).toString());
+  params.append('limit', (filters.limit || 10).toString());
+  if (filters.status && filters.status !== 'ALL') params.append('status', filters.status);
+  if (filters.startDate) params.append('startDate', filters.startDate);
+  if (filters.endDate) params.append('endDate', filters.endDate);
+
+  const response = await axios.get<ApiResponse<VendorBookingListResponse>>(
+    `/admin/vendors/${id}/bookings?${params.toString()}`
+  );
+  if (!response.data.success) {
+    throw new Error(response.data.error?.message || 'Failed to fetch vendor bookings');
+  }
+  return response.data.data;
 };

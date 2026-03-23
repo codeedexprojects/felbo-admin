@@ -20,3 +20,13 @@ export const useSidebarStore = create<SidebarState>()(
     }
   )
 );
+
+interface PageTitleState {
+  pageTitle: string | null;
+  setPageTitle: (title: string | null) => void;
+}
+
+export const usePageTitleStore = create<PageTitleState>()((set) => ({
+  pageTitle: null,
+  setPageTitle: (title) => set({ pageTitle: title }),
+}));

@@ -9,6 +9,7 @@ import {
   rejectVendor,
   getVerificationRequests,
   getVendorRequestDetail,
+  getVendorBookings,
 } from './api';
 import {
   VendorListFilter,
@@ -16,6 +17,7 @@ import {
   VerificationRequestsFilter,
   VerificationRequestsResponse,
 } from './types';
+import { ListBookingsFilter } from '../bookings/types';
 
 export const useVendorRequestDetail = (id: string) => {
   return useQuery({
@@ -46,6 +48,15 @@ export const useVendorDetail = (id: string) => {
     queryKey: ['vendor-detail', id],
     queryFn: () => getVendorDetail(id),
     enabled: !!id,
+  });
+};
+
+export const useVendorBookings = (vendorId: string, filters: ListBookingsFilter) => {
+  return useQuery({
+    queryKey: ['vendor-bookings', vendorId, filters],
+    queryFn: () => getVendorBookings(vendorId, filters),
+    enabled: !!vendorId,
+    placeholderData: (previousData) => previousData,
   });
 };
 

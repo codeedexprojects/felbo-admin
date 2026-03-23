@@ -27,6 +27,7 @@ import {
   useFlagVendorForIssue,
   useProcessRefund,
 } from '@/features/issues/hooks';
+import { useSetPageTitle } from '@/hooks/useSetPageTitle';
 import {
   IssueStatus,
   IssueType,
@@ -172,6 +173,7 @@ function IssueDetailSkeleton() {
 export default function IssueDetailPage({ params }: { params: { issueId: string } }) {
   const { issueId } = params;
   const { data: issue, isLoading, isError } = useIssueById(issueId);
+  useSetPageTitle(issue ? (issue.bookingNumber ?? 'Issue Detail') : undefined);
   const updateStatus = useUpdateIssueStatus(issueId);
   const flagVendor = useFlagVendorForIssue(issueId);
   const processRefund = useProcessRefund(issueId);

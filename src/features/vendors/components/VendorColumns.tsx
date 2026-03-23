@@ -70,10 +70,6 @@ function ActionCell({ vendor }: { vendor: VendorListItem }) {
           <Eye className="h-3.5 w-3.5 text-muted-foreground" />
           View details
         </DropdownMenuItem>
-        <DropdownMenuItem className="gap-2 text-sm">
-          <Store className="h-3.5 w-3.5 text-muted-foreground" />
-          Manage shop
-        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -18,6 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCancellationDetail } from '@/features/cancellation/hooks';
+import { useSetPageTitle } from '@/hooks/useSetPageTitle';
 
 function safeFormat(value: string | null | undefined, fmt: string): string {
   if (!value) return '—';
@@ -99,6 +100,7 @@ export default function CancellationDetailPage() {
   const router = useRouter();
 
   const { data: cancellation, isLoading, isError } = useCancellationDetail(id as string);
+  useSetPageTitle(cancellation?.bookingNumber);
 
   if (isLoading) {
     return (
