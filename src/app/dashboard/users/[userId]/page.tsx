@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import {
@@ -14,7 +15,11 @@ import {
   History,
   Building2,
   Star,
+  Coins,
+  PlusCircle,
+  MinusCircle,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +29,8 @@ import { cn } from '@/lib/utils';
 import { useUserById } from '@/features/users/hooks';
 import { useSetPageTitle } from '@/hooks/useSetPageTitle';
 import { BookingListItem } from '@/features/bookings/types';
+import { CoinActionModal, CoinActionType } from '@/features/felbocoin/components/CoinActionModal';
+import { useQueryClient } from '@tanstack/react-query';
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -91,7 +98,17 @@ function UserDetailSkeleton() {
 export default function UserDetailPage({ params }: { params: { userId: string } }) {
   const { userId } = params;
   const { data: user, isLoading, isError } = useUserById(userId);
+  const queryClient = useQueryClient();
   useSetPageTitle(user?.name);
+
+  const [coinModalType, setCoinModalType] = useState<CoinActionType | null>(null);
+
+  const handleCoinSuccess = () => {
+    toast.success(
+      coinModalType === 'credit' ? 'Coins credited successfully' : 'Coins debited successfully'
+    );
+    queryClient.invalidateQueries({ queryKey: ['users', userId] });
+  };
 
   if (isLoading) return <UserDetailSkeleton />;
 
@@ -219,6 +236,47 @@ export default function UserDetailPage({ params }: { params: { userId: string } 
             }
           />
         </Card>
+      </div>
+
+      {/* FelboCoin Management */}
+      <div className="rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden">
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-border/40 bg-muted/30">
+          <Coins className="h-4 w-4 text-amber-500" />
+          <h3 className="text-sm font-medium text-foreground">FelboCoin Balance</h3>
+        </div>
+        <div className="px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50">
+              <Coins className="h-6 w-6 text-amber-500" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Current Balance</p>
+              <p className="text-2xl font-bold font-mono text-foreground tabular-nums">
+                {user.felboCoinBalance.toLocaleString()}
+              </p>
+              <p className="text-[11px] text-muted-foreground">FelboCoins</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              className="gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-300"
+              onClick={() => setCoinModalType('credit')}
+            >
+              <PlusCircle className="h-4 w-4" />
+              Credit Coins
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-2 border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800 hover:border-red-300"
+              onClick={() => setCoinModalType('debit')}
+            >
+              <MinusCircle className="h-4 w-4" />
+              Debit Coins
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Reported Issues Section */}
@@ -367,6 +425,16 @@ export default function UserDetailPage({ params }: { params: { userId: string } 
           <div className="py-8 text-center text-sm text-muted-foreground">No recent bookings.</div>
         )}
       </Card>
+
+      {/* FelboCoin Action Modal */}
+      <CoinActionModal
+        type={coinModalType}
+        userId={user.id}
+        userName={user.name}
+        currentBalance={user.felboCoinBalance}
+        onClose={() => setCoinModalType(null)}
+        onSuccess={handleCoinSuccess}
+      />
     </div>
   );
 }
