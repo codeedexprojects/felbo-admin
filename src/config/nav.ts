@@ -13,6 +13,7 @@ import {
   LayoutGrid,
   ClipboardCheck,
   UserCircle,
+  Coins,
 } from 'lucide-react';
 import { AdminRole } from '@/types/api';
 
@@ -93,6 +94,12 @@ export const navItems: NavItem[] = [
     href: '/dashboard/categories',
     icon: LayoutGrid,
     roles: ['SUPER_ADMIN'],
+  },
+  {
+    title: 'FelboCoin',
+    href: '/dashboard/felbocoin',
+    icon: Coins,
+    roles: ['SUPER_ADMIN', 'SUB_ADMIN'],
   },
   {
     title: 'Avatar Bank',
