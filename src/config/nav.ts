@@ -3,6 +3,7 @@ import {
   Users,
   Store,
   CalendarCheck2,
+  CalendarDays,
   AlertOctagon,
   CreditCard,
   Ban,
@@ -46,6 +47,12 @@ export const navItems: NavItem[] = [
     title: 'My Vendors',
     href: '/dashboard/association',
     icon: Building2,
+    roles: ['ASSOCIATION_ADMIN'],
+  },
+  {
+    title: 'Events',
+    href: '/dashboard/events',
+    icon: CalendarDays,
     roles: ['ASSOCIATION_ADMIN'],
   },
   {
