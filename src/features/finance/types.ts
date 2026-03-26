@@ -109,7 +109,7 @@ export interface PayoutListFilter {
 
 // ─── Refund types ────────────────────────────────────────────────────────────
 
-export type RefundType = 'ISSUE' | 'CANCELLATION';
+export type RefundType = 'ISSUE' | 'CANCELLATION' | 'COIN';
 
 export interface RefundHistoryItemDto {
   type: RefundType;
@@ -132,6 +132,25 @@ export interface RefundHistoryResponse {
   totalPages: number;
 }
 
+export interface CoinRefundHistoryItemDto {
+  type: 'COIN_REVERSAL' | 'COIN_REFUND';
+  coins: number;
+  bookingId?: string;
+  bookingNumber?: string;
+  userName: string;
+  userPhone: string;
+  refundedAt: string;
+  description: string;
+}
+
+export interface CoinRefundHistoryResponse {
+  refunds: CoinRefundHistoryItemDto[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export interface RefundHistoryFilter {
   type?: RefundType;
   page?: number;
@@ -148,4 +167,33 @@ export interface AssocFinanceSummaryDto {
   thisWeek: FinanceSummaryPeriodDto;
   thisMonth: FinanceSummaryPeriodDto;
   total: FinanceSummaryPeriodDto;
+}
+
+// ─── Registration Revenue types ────────────────────────────────────────────────
+
+export interface IndependentRegistrationRowDto {
+  vendorId: string;
+  vendorName: string;
+  vendorPhone: string;
+  verificationStatus: string;
+  registrationAmount: number;
+  netRevenue: number;
+  paidAt: string;
+}
+
+export interface IndependentRegistrationListParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  from?: string;
+  to?: string;
+  verificationStatus?: string;
+}
+
+export interface IndependentRegistrationListResponse {
+  registrations: IndependentRegistrationRowDto[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }

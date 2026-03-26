@@ -1,6 +1,27 @@
 import apiClient from '@/lib/axios';
 import { ApiResponse } from '@/types/api';
-import { ListBookingsFilter, ListBookingsResponse, BookingDetail } from './types';
+import {
+  ListBookingsFilter,
+  ListBookingsResponse,
+  BookingDetail,
+  AdminBookingStatsFilter,
+  AdminBookingStatsResult,
+} from './types';
+
+export const getBookingStats = async (
+  filters: AdminBookingStatsFilter
+): Promise<AdminBookingStatsResult> => {
+  const params: Record<string, string> = {};
+  if (filters.period) params.period = filters.period;
+  if (filters.startDate) params.startDate = filters.startDate;
+  if (filters.endDate) params.endDate = filters.endDate;
+
+  const response = await apiClient.get<ApiResponse<AdminBookingStatsResult>>(
+    '/admin/bookings/stats',
+    { params }
+  );
+  return response.data.data!;
+};
 
 export const getBookings = async (filters: ListBookingsFilter): Promise<ListBookingsResponse> => {
   const params: Record<string, string | number> = {

@@ -2,11 +2,12 @@
 
 import { useState, useMemo } from 'react';
 import { flexRender, getCoreRowModel, useReactTable, ColumnDef } from '@tanstack/react-table';
-import { Calendar as CalendarIcon, X } from 'lucide-react';
+import { Calendar as CalendarIcon, X, Search } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ModernDatePicker } from '@/components/ui/modern-date-picker';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { TablePagination } from '@/components/ui/table-pagination';
 import {
   Table,
@@ -16,29 +17,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useRefundHistory } from '../hooks';
-import {
-  RefundHistoryFilter,
-  RefundType,
-  RefundHistoryItemDto,
-  CoinRefundHistoryItemDto,
-} from '../types';
+import { useRegistrations } from '../hooks';
+import { IndependentRegistrationRowDto, IndependentRegistrationListParams } from '../types';
 import { useMounted } from '@/hooks/use-mounted';
 import { cn } from '@/lib/utils';
-
-interface DisplayRefund {
-  bookingNumber?: string;
-  shopName?: string;
-  userPhone?: string;
-  userName: string;
-  type: string;
-  amount?: number;
-  coins?: number;
-  issueType?: string;
-  reason?: string;
-  description?: string;
-  refundedAt: string;
-}
+import { useDebounce } from '@/hooks/useDebounce';
 
 function formatCurrency(amount: number) {
   return `₹${amount.toLocaleString('en-IN', {
@@ -67,103 +50,82 @@ function SkeletonRow({ cols }: { cols: number }) {
   );
 }
 
-function RefundTypeBadge({ type }: { type: string }) {
-  if (type === 'ISSUE') {
-    return (
-      <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium bg-red-50 text-red-700 border border-red-200">
-        Issue
-      </span>
-    );
-  }
-  if (type === 'CANCELLATION') {
-    return (
-      <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
-        Cancellation
-      </span>
-    );
-  }
+function StatusBadge({ status }: { status: string }) {
+  const isVerified = status === 'VERIFIED';
   return (
-    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
-      Coin
+    <span
+      className={cn(
+        'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium border',
+        isVerified
+          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+          : 'bg-amber-50 text-amber-700 border-amber-200'
+      )}
+    >
+      {isVerified ? 'Verified' : status}
     </span>
   );
 }
 
-const TYPE_OPTIONS: { label: string; value: RefundType | 'ALL' }[] = [
-  { label: 'All Cash', value: 'ALL' },
-  { label: 'Issue', value: 'ISSUE' },
-  { label: 'Cancellation', value: 'CANCELLATION' },
-  { label: 'Coin', value: 'COIN' },
-];
-
-export function RefundsTable() {
+export function RegistrationsTable() {
   const mounted = useMounted();
-  const [filter, setFilter] = useState<RefundHistoryFilter>({ page: 1, limit: 10 });
-  const [typeFilter, setTypeFilter] = useState<RefundType | 'ALL'>('ALL');
+  const [filter, setFilter] = useState<IndependentRegistrationListParams>({ page: 1, limit: 10 });
+  const [searchInput, setSearchInput] = useState('');
+  const debouncedSearch = useDebounce(searchInput, 500);
 
-  const { data, isLoading, isError } = useRefundHistory(filter);
+  // Sync debounced search with filter
+  useMemo(() => {
+    if (mounted) {
+      setFilter((prev) => ({ ...prev, search: debouncedSearch || undefined, page: 1 }));
+    }
+  }, [debouncedSearch, mounted]);
 
-  const columns: ColumnDef<RefundHistoryItemDto | CoinRefundHistoryItemDto>[] = useMemo(
+  const { data, isLoading, isError } = useRegistrations(filter);
+
+  const columns: ColumnDef<IndependentRegistrationRowDto>[] = useMemo(
     () => [
       {
-        header: 'Booking',
-        accessorKey: 'bookingNumber',
-        cell: ({ row }) => {
-          const orig = row.original as unknown as DisplayRefund;
-          return (
-            <div>
-              <p className="text-sm font-medium text-foreground">{orig.bookingNumber || '—'}</p>
-              <p className="text-[11px] text-muted-foreground">
-                {orig.shopName || orig.userPhone || '—'}
-              </p>
-            </div>
-          );
-        },
+        header: 'Vendor',
+        accessorKey: 'vendorName',
+        cell: ({ row }) => (
+          <div>
+            <p className="text-sm font-medium text-foreground">{row.original.vendorName}</p>
+            <p className="text-[11px] text-muted-foreground truncate max-w-[150px]">
+              {row.original.vendorId}
+            </p>
+          </div>
+        ),
       },
       {
-        header: 'User',
-        accessorKey: 'userName',
+        header: 'Phone',
+        accessorKey: 'vendorPhone',
         cell: ({ getValue }) => <span className="text-sm">{getValue<string>()}</span>,
       },
       {
-        header: 'Type',
-        accessorKey: 'type',
-        cell: ({ getValue }) => <RefundTypeBadge type={getValue<string>()} />,
+        header: 'Status',
+        accessorKey: 'verificationStatus',
+        cell: ({ getValue }) => <StatusBadge status={getValue<string>()} />,
       },
       {
-        header: 'Amount',
-        id: 'amount',
-        cell: ({ row }) => {
-          const orig = row.original as unknown as DisplayRefund;
-          if (orig.amount !== undefined) {
-            return (
-              <span className="text-sm font-semibold text-red-600 tabular-nums">
-                {formatCurrency(orig.amount)}
-              </span>
-            );
-          }
-          return (
-            <span className="text-sm font-semibold text-blue-600 tabular-nums">
-              {orig.coins} Coins
-            </span>
-          );
-        },
+        header: 'Registration Fee',
+        accessorKey: 'registrationAmount',
+        cell: ({ getValue }) => (
+          <span className="text-sm tabular-nums text-foreground">
+            {formatCurrency(getValue<number>())}
+          </span>
+        ),
       },
       {
-        header: 'Reason',
-        id: 'reason',
-        cell: ({ row }) => {
-          const orig = row.original as unknown as DisplayRefund;
-          return (
-            <span className="text-sm text-muted-foreground max-w-[200px] truncate block">
-              {orig.issueType ?? orig.reason ?? orig.description ?? '—'}
-            </span>
-          );
-        },
+        header: 'Net Revenue',
+        accessorKey: 'netRevenue',
+        cell: ({ getValue }) => (
+          <span className="text-sm font-semibold text-emerald-600 tabular-nums">
+            {formatCurrency(getValue<number>())}
+          </span>
+        ),
       },
       {
-        header: 'Refunded At',
-        accessorKey: 'refundedAt',
+        header: 'Registered At',
+        accessorKey: 'paidAt',
         cell: ({ getValue }) => (
           <span className="text-sm tabular-nums">{formatDate(getValue<string>())}</span>
         ),
@@ -174,7 +136,7 @@ export function RefundsTable() {
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
-    data: data?.refunds || [],
+    data: data?.registrations || [],
     columns,
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
@@ -192,47 +154,37 @@ export function RefundsTable() {
     },
   });
 
-  if (!mounted) return null;
-
-  const handleTypeChange = (value: RefundType | 'ALL') => {
-    setTypeFilter(value);
-    setFilter((prev) => ({ ...prev, type: value === 'ALL' ? undefined : value, page: 1 }));
-  };
-
   const handleDateChange = (date: Date | undefined, key: 'from' | 'to') => {
     const val = date ? format(date, 'yyyy-MM-dd') : undefined;
     setFilter((prev) => ({ ...prev, [key]: val, page: 1 }));
   };
 
+  if (!mounted) return null;
+
   return (
     <div className="space-y-4">
       {/* Filter bar */}
       <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/60 bg-card px-4 py-3 shadow-sm">
-        {/* Type filter */}
-        <div className="flex items-center gap-1 rounded-lg border border-border/60 bg-muted/40 p-1">
-          {TYPE_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => handleTypeChange(opt.value)}
-              className={
-                typeFilter === opt.value
-                  ? 'rounded-md bg-background px-3 py-1.5 text-xs font-semibold text-foreground shadow-sm border border-border/60 transition-all'
-                  : 'rounded-md px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors'
-              }
-            >
-              {opt.label}
-            </button>
-          ))}
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search vendor..."
+            type="search"
+            className="w-[200px] h-9 bg-muted/30 pl-8 text-xs border-border/60 focus-visible:ring-1 focus-visible:ring-ring"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+          />
         </div>
 
         {/* Date range */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 ml-auto">
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
                 className={cn(
-                  'h-10 w-[140px] px-3 text-xs font-normal border-border/60 bg-muted/30 justify-start',
+                  'h-9 w-[130px] px-3 text-xs font-normal border-border/60 bg-muted/30 justify-start',
                   !filter.from && 'text-muted-foreground'
                 )}
               >
@@ -255,7 +207,7 @@ export function RefundsTable() {
               <Button
                 variant="outline"
                 className={cn(
-                  'h-10 w-[140px] px-3 text-xs font-normal border-border/60 bg-muted/30 justify-start',
+                  'h-9 w-[130px] px-3 text-xs font-normal border-border/60 bg-muted/30 justify-start',
                   !filter.to && 'text-muted-foreground'
                 )}
               >
@@ -272,15 +224,15 @@ export function RefundsTable() {
           </Popover>
         </div>
 
-        {(typeFilter !== 'ALL' || filter.from || filter.to) && (
+        {(filter.search || filter.from || filter.to) && (
           <Button
             variant="ghost"
             size="sm"
             onClick={() => {
-              setTypeFilter('ALL');
+              setSearchInput('');
               setFilter({ page: 1, limit: 10 });
             }}
-            className="h-10 gap-1.5 text-muted-foreground hover:text-foreground"
+            className="h-9 gap-1.5 text-muted-foreground hover:text-foreground"
           >
             <X className="h-3.5 w-3.5" />
             Clear
@@ -316,7 +268,7 @@ export function RefundsTable() {
               ) : isError ? (
                 <TableRow>
                   <TableCell colSpan={columns.length} className="h-32 text-center text-red-500">
-                    Failed to load refund data. Please try refreshing.
+                    Failed to load registration data. Please try refreshing.
                   </TableCell>
                 </TableRow>
               ) : table.getRowModel().rows.length ? (
@@ -338,7 +290,7 @@ export function RefundsTable() {
                     colSpan={columns.length}
                     className="h-32 text-center text-muted-foreground"
                   >
-                    No refund records found for the selected filters.
+                    No registrations found for the selected filters.
                   </TableCell>
                 </TableRow>
               )}
@@ -350,7 +302,7 @@ export function RefundsTable() {
       {/* Pagination */}
       <div className="flex items-center justify-between px-1">
         <p className="text-xs text-muted-foreground">
-          {(data?.total ?? 0) > 0 ? `${data?.total} refunds` : 'No refunds'}
+          {(data?.total ?? 0) > 0 ? `${data?.total} records` : 'No records'}
         </p>
         <TablePagination
           pageIndex={(filter.page ?? 1) - 1}

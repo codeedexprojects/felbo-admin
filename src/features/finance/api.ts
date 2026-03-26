@@ -13,7 +13,10 @@ import {
   PayoutListFilter,
   RefundHistoryFilter,
   RefundHistoryResponse,
+  CoinRefundHistoryResponse,
   AssocFinanceSummaryDto,
+  IndependentRegistrationListParams,
+  IndependentRegistrationListResponse,
 } from './types';
 
 // ─── Finance API ─────────────────────────────────────────────────────────────
@@ -147,7 +150,7 @@ export const fetchAssocVendorRevenueTable = async (
 
 export const fetchRefundHistory = async (
   filter: RefundHistoryFilter
-): Promise<RefundHistoryResponse> => {
+): Promise<RefundHistoryResponse | CoinRefundHistoryResponse> => {
   const params: Record<string, string | number> = {
     page: filter.page ?? 1,
     limit: filter.limit ?? 10,
@@ -156,8 +159,30 @@ export const fetchRefundHistory = async (
   if (filter.from) params.from = filter.from;
   if (filter.to) params.to = filter.to;
 
-  const res = await apiClient.get<ApiResponse<RefundHistoryResponse>>('/admin/finance/refunds', {
-    params,
-  });
+  const res = await apiClient.get<ApiResponse<RefundHistoryResponse | CoinRefundHistoryResponse>>(
+    '/admin/finance/refunds',
+    { params }
+  );
+  return res.data.data!;
+};
+
+// ─── Registration API ────────────────────────────────────────────────────────
+
+export const fetchRegistrations = async (
+  filter: IndependentRegistrationListParams
+): Promise<IndependentRegistrationListResponse> => {
+  const params: Record<string, string | number> = {
+    page: filter.page ?? 1,
+    limit: filter.limit ?? 10,
+  };
+  if (filter.search) params.search = filter.search;
+  if (filter.from) params.from = filter.from;
+  if (filter.to) params.to = filter.to;
+  if (filter.verificationStatus) params.verificationStatus = filter.verificationStatus;
+
+  const res = await apiClient.get<ApiResponse<IndependentRegistrationListResponse>>(
+    '/admin/finance/registrations',
+    { params }
+  );
   return res.data.data!;
 };

@@ -445,6 +445,15 @@ function DetailSkeleton() {
   );
 }
 
+// ─── Format Time Helper ─────────────────────────────────────────────────────────
+function formatTime(time: string) {
+  if (!time) return '';
+  const [h, m] = time.split(':').map(Number);
+  const period = h >= 12 ? 'PM' : 'AM';
+  const hour = h % 12 || 12;
+  return `${hour}:${m.toString().padStart(2, '0')} ${period}`;
+}
+
 // ─── Working hours row ────────────────────────────────────────────────────────
 function WorkingHoursSection({ workingHours }: { workingHours: WorkingHours }) {
   const dayNames: { key: keyof WorkingHours; label: string }[] = [
@@ -456,14 +465,6 @@ function WorkingHoursSection({ workingHours }: { workingHours: WorkingHours }) {
     { key: 'saturday', label: 'Saturday' },
     { key: 'sunday', label: 'Sunday' },
   ];
-
-  const formatTime = (time: string) => {
-    if (!time) return '';
-    const [h, m] = time.split(':').map(Number);
-    const period = h >= 12 ? 'PM' : 'AM';
-    const hour = h % 12 || 12;
-    return `${hour}:${m.toString().padStart(2, '0')} ${period}`;
-  };
 
   return (
     <div className="grid grid-cols-1 gap-x-8 gap-y-2 sm:grid-cols-2">
@@ -669,13 +670,30 @@ function ShopCard({
                         </div>
                       )}
                     </div>
-                    <div className="min-w-0 pr-6">
+                    <div className="min-w-0 pr-6 flex-1">
                       <p className="truncate text-sm font-bold text-foreground leading-tight">
                         {barber.name}
                       </p>
-                      <p className="truncate text-[11px] font-medium text-muted-foreground mt-0.5">
+                      <p className="truncate text-[11px] font-medium text-muted-foreground mt-0.5 mb-2">
                         {barber.phone}
                       </p>
+
+                      {/* Barber Schedule */}
+                      {barber.timing?.todaySchedule ? (
+                        barber.timing.todaySchedule.isWorking &&
+                        barber.timing.todaySchedule.workingHours ? (
+                          <div className="flex items-center gap-1.5 text-[10px] font-medium text-emerald-700 bg-emerald-50 w-fit px-2 py-0.5 rounded-full border border-emerald-200">
+                            <CalendarIcon className="h-3 w-3" />
+                            {formatTime(barber.timing.todaySchedule.workingHours.start)} -{' '}
+                            {formatTime(barber.timing.todaySchedule.workingHours.end)}
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 text-[10px] font-medium text-red-700 bg-red-50 w-fit px-2 py-0.5 rounded-full border border-red-200">
+                            <CalendarIcon className="h-3 w-3" />
+                            Not Working Today
+                          </div>
+                        )
+                      ) : null}
                     </div>
                     <div className="absolute top-3 right-3">
                       <div
