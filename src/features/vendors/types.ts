@@ -154,6 +154,21 @@ export interface VendorAdminDetail {
       phone: string;
       photo?: string;
       isAvailable: boolean;
+      cancellationCount?: number;
+      cancellationsThisWeek?: number;
+      timing?: {
+        presets: {
+          id: string;
+          name: string;
+          workingHours: { start: string; end: string };
+          breaks: Array<{ start: string; end: string; reason?: string }>;
+        }[];
+        todaySchedule: {
+          isWorking: boolean;
+          workingHours: { start: string; end: string } | null;
+          breaks: Array<{ start: string; end: string; reason?: string }>;
+        } | null;
+      };
     }[];
     barberCount: number;
     services: {

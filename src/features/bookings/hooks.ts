@@ -1,8 +1,16 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getBookings, getBookingDetail, processRefund } from './api';
-import { ListBookingsFilter } from './types';
+import { getBookings, getBookingDetail, processRefund, getBookingStats } from './api';
+import { ListBookingsFilter, AdminBookingStatsFilter } from './types';
+
+export const useAdminBookingStats = (filters: AdminBookingStatsFilter) => {
+  return useQuery({
+    queryKey: ['bookingStats', filters],
+    queryFn: () => getBookingStats(filters),
+    placeholderData: (previousData) => previousData,
+  });
+};
 
 export const useBookings = (filters: ListBookingsFilter) => {
   return useQuery({

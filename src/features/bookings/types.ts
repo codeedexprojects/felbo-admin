@@ -7,6 +7,25 @@ export interface ListBookingsFilter {
   endDate?: string;
 }
 
+export type BookingStatsPeriod = 'day' | 'week' | 'month' | 'year' | 'custom';
+
+export interface AdminBookingStatsFilter {
+  period?: BookingStatsPeriod;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface AdminBookingStatsResult {
+  period: string;
+  startDate: string;
+  endDate: string;
+  total: number;
+  confirmed: number;
+  completed: number;
+  cancelled: number;
+  noShow: number;
+}
+
 export interface BookingListItem {
   id: string;
   bookingNumber: string;

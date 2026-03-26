@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, ChangeEvent } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { Search, CalendarDays, CheckCircle2, Ban, Calendar as CalendarIcon, X } from 'lucide-react';
 
@@ -24,11 +24,11 @@ import {
 } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ModernDatePicker } from '@/components/ui/modern-date-picker';
-import { useBookings } from '../hooks';
+import { useBookings, useAdminBookingStats } from '../hooks';
 import { createBookingColumns } from './BookingColumns';
 import { useMounted } from '@/hooks/use-mounted';
 import { useDebounce } from '@/hooks/useDebounce';
-import { ListBookingsFilter } from '../types';
+import { ListBookingsFilter, BookingStatsPeriod } from '../types';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -52,6 +52,7 @@ export function BookingsTable() {
   const [searchValue, setSearchValue] = useState('');
   const debouncedSearch = useDebounce(searchValue, 500);
 
+  const [period, setPeriod] = useState<BookingStatsPeriod>('day');
   const [filter, setFilter] = useState<ListBookingsFilter>({
     page: 1,
     limit: 10,
@@ -66,7 +67,27 @@ export function BookingsTable() {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   }, [debouncedSearch]);
 
+  useEffect(() => {
+    if (filter.startDate || filter.endDate) {
+      setPeriod('custom');
+    } else if (period === 'custom') {
+      setPeriod('day');
+    }
+  }, [filter.startDate, filter.endDate, period]);
+
   const { data, isLoading, isError } = useBookings(filter);
+  const { data: bookingStats, isLoading: isStatsLoading } = useAdminBookingStats({
+    period:
+      filter.startDate && filter.endDate && period === 'custom'
+        ? 'custom'
+        : period === 'custom'
+          ? 'custom'
+          : period,
+    startDate:
+      period === 'custom' || (filter.startDate && filter.endDate) ? filter.startDate : undefined,
+    endDate:
+      period === 'custom' || (filter.startDate && filter.endDate) ? filter.endDate : undefined,
+  });
   const mounted = useMounted();
 
   const columns = useMemo(() => createBookingColumns(admin?.role), [admin?.role]);
@@ -87,30 +108,37 @@ export function BookingsTable() {
   const stats = [
     {
       label: 'Total Bookings',
-      value: data?.total ?? 0,
+      value: bookingStats?.total ?? 0,
       icon: CalendarDays,
       color: 'text-blue-600',
       bg: 'bg-blue-50',
     },
     {
       label: 'Confirmed',
-      value: 0, // Not supported by backend yet
+      value: bookingStats?.confirmed ?? 0,
       icon: CalendarIcon,
       color: 'text-orange-500',
       bg: 'bg-orange-50',
     },
     {
       label: 'Completed',
-      value: 0, // Not supported by backend yet
+      value: bookingStats?.completed ?? 0,
       icon: CheckCircle2,
       color: 'text-emerald-600',
       bg: 'bg-emerald-50',
     },
     {
       label: 'Cancelled',
-      value: 0, // Not supported by backend yet
+      value: bookingStats?.cancelled ?? 0,
       icon: Ban,
-      color: 'text-red-500',
+      color: 'text-rose-500',
+      bg: 'bg-rose-50',
+    },
+    {
+      label: 'No Shows',
+      value: bookingStats?.noShow ?? 0,
+      icon: Ban,
+      color: 'text-red-600',
       bg: 'bg-red-50',
     },
   ];
@@ -137,8 +165,52 @@ export function BookingsTable() {
 
   return (
     <div className="space-y-5">
+      {/* Stat Header & Period Switcher */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between py-2">
+        <div>
+          <h2 className="text-lg font-bold tracking-tight text-foreground">Booking Analytics</h2>
+          {bookingStats && (
+            <p className="text-[11px] font-medium text-muted-foreground mt-0.5">
+              Showing data from{' '}
+              <span className="text-foreground">
+                {format(new Date(bookingStats.startDate), 'dd MMM')}
+              </span>{' '}
+              to{' '}
+              <span className="text-foreground">
+                {format(new Date(bookingStats.endDate), 'dd MMM yyyy')}
+              </span>
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5 overflow-x-auto rounded-xl border border-border/50 bg-muted/20 p-1 backdrop-blur-sm">
+          {(['day', 'week', 'month', 'year'] as const).map((p) => (
+            <Button
+              key={p}
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setPeriod(p);
+              }}
+              className={cn(
+                'h-7 px-4 text-[11px] font-bold capitalize transition-all rounded-lg',
+                period === p
+                  ? 'bg-background text-foreground shadow-sm ring-1 ring-border/20'
+                  : 'text-muted-foreground hover:bg-muted/40'
+              )}
+            >
+              {p}
+            </Button>
+          ))}
+          {period === 'custom' && (
+            <div className="h-7 px-4 flex items-center text-[11px] font-bold capitalize bg-primary/10 text-primary border border-primary/20 rounded-lg shadow-sm">
+              Custom Range
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Stat cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-5 animate-in fade-in slide-in-from-bottom-2 duration-500">
         {stats.map((stat) => (
           <div
             key={stat.label}
@@ -152,7 +224,7 @@ export function BookingsTable() {
             <div>
               <p className="text-xs text-muted-foreground">{stat.label}</p>
               <p className="text-xl font-semibold text-foreground">
-                {isLoading ? '—' : stat.value}
+                {isStatsLoading ? '—' : stat.value}
               </p>
             </div>
           </div>

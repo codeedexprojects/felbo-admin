@@ -14,12 +14,14 @@ import {
   acceptPayout,
   rejectPayout,
   fetchRefundHistory,
+  fetchRegistrations,
 } from './api';
 import {
   FinancePeriod,
   VendorRevenueTableFilter,
   PayoutListFilter,
   RefundHistoryFilter,
+  IndependentRegistrationListParams,
 } from './types';
 
 // ─── Finance hooks ────────────────────────────────────────────────────────────
@@ -140,6 +142,16 @@ export const useRefundHistory = (filter: RefundHistoryFilter) => {
   return useQuery({
     queryKey: ['finance', 'refunds', filter],
     queryFn: () => fetchRefundHistory(filter),
+    placeholderData: (previous) => previous,
+  });
+};
+
+// ─── Registration hooks ────────────────────────────────────────────────────────
+
+export const useRegistrations = (filter: IndependentRegistrationListParams) => {
+  return useQuery({
+    queryKey: ['finance', 'registrations', filter],
+    queryFn: () => fetchRegistrations(filter),
     placeholderData: (previous) => previous,
   });
 };
