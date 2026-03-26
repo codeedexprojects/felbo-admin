@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { navItems } from '@/config/nav';
 import { useMounted } from '@/hooks/use-mounted';
+import { useSuperAdminDashboard } from '@/features/dashboard/hooks';
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -21,6 +22,9 @@ export function Sidebar() {
     if (!item.roles) return true;
     return admin && item.roles.includes(admin.role);
   });
+
+  const { data: dashboardData } = useSuperAdminDashboard();
+  const pendingCount = dashboardData?.pendingVerifications || 0;
 
   if (!mounted) return null;
 
@@ -67,13 +71,18 @@ export function Sidebar() {
                       <Link
                         href={item.href}
                         className={cn(
-                          'flex h-9 w-9 items-center justify-center rounded-md transition-colors mx-auto',
+                          'relative flex h-9 w-9 items-center justify-center rounded-md transition-colors mx-auto',
                           isActive
                             ? 'bg-primary/10 text-primary'
                             : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                         )}
                       >
                         <item.icon className="h-4 w-4" />
+                        {item.title === 'Vendors' && pendingCount > 0 && (
+                          <span className="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[0.625rem] font-bold text-white shadow-sm ring-2 ring-background">
+                            {pendingCount > 9 ? '9+' : pendingCount}
+                          </span>
+                        )}
                         <span className="sr-only">{item.title}</span>
                       </Link>
                     </TooltipTrigger>
@@ -87,7 +96,7 @@ export function Sidebar() {
                   key={index}
                   href={item.href}
                   className={cn(
-                    'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+                    'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors relative',
                     isActive
                       ? 'bg-primary/10 text-primary font-medium'
                       : 'text-muted-foreground hover:bg-muted hover:text-foreground font-normal'
@@ -95,6 +104,11 @@ export function Sidebar() {
                 >
                   <item.icon className="h-4 w-4 shrink-0" />
                   <span className="truncate">{item.title}</span>
+                  {item.title === 'Vendors' && pendingCount > 0 && (
+                    <span className="ml-auto flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 px-1 text-[0.625rem] font-bold text-white">
+                      {pendingCount > 99 ? '99+' : pendingCount}
+                    </span>
+                  )}
                 </Link>
               );
             })}
