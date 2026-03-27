@@ -7,9 +7,18 @@ import {
   VerificationRequestsFilter,
   VerificationRequestsResponse,
   VendorBookingListResponse,
+  PendingShopCount,
 } from './types';
 import { ListBookingsFilter } from '../bookings/types';
 import { ApiResponse } from '@/types/api';
+
+export const getPendingShopCount = async (): Promise<PendingShopCount> => {
+  const response = await axios.get<ApiResponse<PendingShopCount>>('/admin/shops/pending/count');
+  if (!response.data.success) {
+    throw new Error(response.data.error?.message || 'Failed to fetch pending shop count');
+  }
+  return response.data.data;
+};
 
 export const getVendorRequestDetail = async (id: string): Promise<VendorRequestDetail> => {
   const response = await axios.get<ApiResponse<VendorRequestDetail>>(

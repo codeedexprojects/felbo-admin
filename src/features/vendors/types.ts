@@ -1,5 +1,9 @@
 import { BookingListItem } from '../bookings/types';
 
+export interface PendingShopCount {
+  count: number;
+}
+
 export interface AddressInput {
   line1: string;
   line2?: string;
