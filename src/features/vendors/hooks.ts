@@ -10,6 +10,7 @@ import {
   getVerificationRequests,
   getVendorRequestDetail,
   getVendorBookings,
+  getPendingShopCount,
 } from './api';
 import {
   VendorListFilter,
@@ -18,6 +19,14 @@ import {
   VerificationRequestsResponse,
 } from './types';
 import { ListBookingsFilter } from '../bookings/types';
+
+export const usePendingShopCount = () => {
+  return useQuery({
+    queryKey: ['pending-shop-count'],
+    queryFn: getPendingShopCount,
+    staleTime: 30_000,
+  });
+};
 
 export const useVendorRequestDetail = (id: string) => {
   return useQuery({

@@ -11,6 +11,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { navItems } from '@/config/nav';
 import { useMounted } from '@/hooks/use-mounted';
 import { useSuperAdminDashboard } from '@/features/dashboard/hooks';
+import { usePendingShopCount } from '@/features/vendors/hooks';
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -25,6 +26,9 @@ export function Sidebar() {
 
   const { data: dashboardData } = useSuperAdminDashboard();
   const pendingCount = dashboardData?.pendingVerifications || 0;
+
+  const { data: requestCounts } = usePendingShopCount();
+  const pendingShopCount = requestCounts?.count || 0;
 
   if (!mounted) return null;
 
@@ -83,6 +87,11 @@ export function Sidebar() {
                             {pendingCount > 9 ? '9+' : pendingCount}
                           </span>
                         )}
+                        {item.title === 'Shop Approvals' && pendingShopCount > 0 && (
+                          <span className="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[0.625rem] font-bold text-white shadow-sm ring-2 ring-background">
+                            {pendingShopCount > 9 ? '9+' : pendingShopCount}
+                          </span>
+                        )}
                         <span className="sr-only">{item.title}</span>
                       </Link>
                     </TooltipTrigger>
@@ -107,6 +116,11 @@ export function Sidebar() {
                   {item.title === 'Vendors' && pendingCount > 0 && (
                     <span className="ml-auto flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 px-1 text-[0.625rem] font-bold text-white">
                       {pendingCount > 99 ? '99+' : pendingCount}
+                    </span>
+                  )}
+                  {item.title === 'Shop Approvals' && pendingShopCount > 0 && (
+                    <span className="ml-auto flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 px-1 text-[0.625rem] font-bold text-white">
+                      {pendingShopCount > 99 ? '99+' : pendingShopCount}
                     </span>
                   )}
                 </Link>

@@ -109,7 +109,7 @@ function CategoryFormInner({
           <Label htmlFor="cat-name">Name</Label>
           <Input
             id="cat-name"
-            placeholder="e.g. Photography"
+            placeholder="e.g. Haircut"
             value={name}
             onChange={(e) => setName(e.target.value)}
             disabled={isPending}
