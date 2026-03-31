@@ -20,11 +20,12 @@ import {
 } from './types';
 import { ListBookingsFilter } from '../bookings/types';
 
-export const usePendingShopCount = () => {
+export const usePendingShopCount = (options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: ['pending-shop-count'],
     queryFn: getPendingShopCount,
     staleTime: 30_000,
+    enabled: options?.enabled !== false,
   });
 };
 
@@ -107,10 +108,12 @@ export const useVerifyVendor = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vendors'] });
       queryClient.invalidateQueries({ queryKey: ['vendor-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard', 'super-admin'] });
     },
     onError: () => {
       queryClient.invalidateQueries({ queryKey: ['vendors'] });
       queryClient.invalidateQueries({ queryKey: ['vendor-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard', 'super-admin'] });
       toast.error('Failed to verify vendor. Please try again.');
     },
   });
@@ -154,10 +157,12 @@ export const useRejectVendor = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vendors'] });
       queryClient.invalidateQueries({ queryKey: ['vendor-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard', 'super-admin'] });
     },
     onError: () => {
       queryClient.invalidateQueries({ queryKey: ['vendors'] });
       queryClient.invalidateQueries({ queryKey: ['vendor-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard', 'super-admin'] });
       toast.error('Failed to reject vendor. Please try again.');
     },
   });
