@@ -28,7 +28,9 @@ export function MobileSidebar() {
     return admin && item.roles.includes(admin.role);
   });
 
-  const { data: dashboardData } = useSuperAdminDashboard();
+  const isSuperOrSub = admin?.role === 'SUPER_ADMIN' || admin?.role === 'SUB_ADMIN';
+
+  const { data: dashboardData } = useSuperAdminDashboard({ enabled: isSuperOrSub });
   const pendingCount = dashboardData?.pendingVerifications || 0;
 
   return (

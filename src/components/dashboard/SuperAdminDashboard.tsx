@@ -57,8 +57,6 @@ export function SuperAdminDashboard() {
             title="Total Users"
             value={data?.totalUsers.toLocaleString() ?? '0'}
             icon={Users}
-            description="All time registered"
-            trend="up"
             color="blue"
           />
           <StatCard
@@ -66,8 +64,6 @@ export function SuperAdminDashboard() {
             title="Total Vendors"
             value={data?.totalVendors.toLocaleString() ?? '0'}
             icon={Store}
-            description="All time registered"
-            trend="up"
             color="violet"
           />
           <StatCard
@@ -75,8 +71,6 @@ export function SuperAdminDashboard() {
             title="Total Bookings"
             value={data?.totalBookings.toLocaleString() ?? '0'}
             icon={CalendarCheck2}
-            description="All time bookings"
-            trend="up"
             color="emerald"
           />
           <StatCard
@@ -84,8 +78,6 @@ export function SuperAdminDashboard() {
             title="Today's Bookings"
             value={data?.todaysBookings.toLocaleString() ?? '0'}
             icon={Activity}
-            description="Bookings today"
-            trend="up"
             color="amber"
           />
           <StatCard
@@ -96,8 +88,6 @@ export function SuperAdminDashboard() {
               maximumFractionDigits: 2,
             })}`}
             icon={IndianRupee}
-            description="Sum of ₹10 advances"
-            trend="up"
             color="emerald"
           />
           <Link href="/dashboard/vendors/requests" className="block w-full">
@@ -106,7 +96,6 @@ export function SuperAdminDashboard() {
               title="Pending Verifications"
               value={data?.pendingVerifications.toLocaleString() ?? '0'}
               icon={Clock}
-              description="Vendors awaiting approval"
               color="rose"
             />
           </Link>
