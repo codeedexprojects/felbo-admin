@@ -1,31 +1,49 @@
 'use client';
 
 import { ColumnDef } from '@tanstack/react-table';
-import { Vendor } from '@/features/vendors/types';
+import { VerificationRequestItem } from '@/features/vendors/types';
 import { format } from 'date-fns';
-import { DocumentPreview, VerificationActions } from './VerificationActions';
+import { VerificationActions } from './VerificationActions';
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Eye } from 'lucide-react';
 
-export const verificationColumns: ColumnDef<Vendor>[] = [
+function ViewCell({ item }: { item: VerificationRequestItem }) {
+  const router = useRouter();
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      className="h-8 gap-1.5 text-xs border-border/60"
+      onClick={() => router.push(`/dashboard/vendors/requests/${item.id}`)}
+    >
+      <Eye className="h-3 w-3" />
+      View
+    </Button>
+  );
+}
+
+export const createVerificationColumns = (): ColumnDef<VerificationRequestItem>[] => [
   {
-    accessorKey: 'shopDetails.name',
+    id: 'serialNumber',
+    header: 'Sl No',
+    cell: ({ row }) => (
+      <span className="text-xs font-medium text-muted-foreground">{row.original.slNo}</span>
+    ),
+  },
+  {
+    accessorKey: 'shopName',
     header: 'Shop Name',
     cell: ({ row }) => (
-      // Shop name might not be directly on vendor root in list API?
-      // Let's check api.ts. It maps response: ownerName, phone, etc.
-      // So I need to update Backend `listVendors` to include shopDetails.
-      // But for now, I'll use Owner Name as primary identifier if shop name missing.
-      <span className="font-semibold text-foreground">{row.original.shopDetails?.name || '—'}</span>
+      <span className="font-semibold text-foreground">{row.getValue('shopName') || '—'}</span>
     ),
   },
   {
     accessorKey: 'ownerName',
     header: 'Owner',
     cell: ({ row }) => (
-      <div className="flex flex-col">
-        <span className="font-medium text-sm text-foreground">{row.getValue('ownerName')}</span>
-        <span className="text-xs text-muted-foreground">{row.original.email || 'No email'}</span>
-      </div>
+      <span className="font-medium text-sm text-foreground">{row.getValue('ownerName')}</span>
     ),
   },
   {
@@ -38,10 +56,10 @@ export const verificationColumns: ColumnDef<Vendor>[] = [
     ),
   },
   {
-    accessorKey: 'registrationType',
+    accessorKey: 'type',
     header: 'Type',
     cell: ({ row }) => {
-      const type = row.getValue('registrationType') as string;
+      const type = row.getValue('type') as string;
       const isIndie = type === 'INDEPENDENT';
       return (
         <span
@@ -52,33 +70,51 @@ export const verificationColumns: ColumnDef<Vendor>[] = [
               : 'bg-blue-50 text-blue-700 border-blue-200'
           )}
         >
-          {type ? type.replace('_', ' ') : '—'}
+          {type?.replace('_', ' ') ?? '—'}
         </span>
       );
     },
   },
   {
-    accessorKey: 'createdAt',
+    accessorKey: 'submitted',
     header: 'Submitted',
-    cell: ({ row }) => (
-      <div className="flex flex-col">
-        <span className="text-xs font-medium text-foreground">
-          {format(new Date(row.getValue('createdAt')), 'dd MMM yyyy')}
-        </span>
-        <span className="text-[10px] text-muted-foreground">
-          {format(new Date(row.getValue('createdAt')), 'hh:mm a')}
-        </span>
-      </div>
-    ),
+    cell: ({ row }) => {
+      const submitted = row.getValue('submitted') as string;
+      return (
+        <div className="flex flex-col">
+          <span className="text-xs font-medium text-foreground">
+            {format(new Date(submitted), 'dd MMM yyyy')}
+          </span>
+          <span className="text-[10px] text-muted-foreground">
+            {format(new Date(submitted), 'hh:mm a')}
+          </span>
+        </div>
+      );
+    },
   },
   {
-    id: 'documents',
-    header: 'Documents',
-    cell: ({ row }) => <DocumentPreview vendor={row.original} />,
+    id: 'view',
+    cell: ({ row }) => <ViewCell item={row.original} />,
   },
   {
     id: 'actions',
     header: 'Actions',
-    cell: ({ row }) => <VerificationActions vendor={row.original} />,
+    cell: ({ row }) => {
+      // VerificationActions expects a Vendor shape — pass minimum required fields
+      const item = row.original;
+      return (
+        <VerificationActions
+          vendor={{
+            id: item.id,
+            ownerName: item.ownerName,
+            phone: item.phone,
+            email: null,
+            verificationStatus: 'PENDING',
+            status: 'PENDING',
+            createdAt: item.submitted,
+          }}
+        />
+      );
+    },
   },
 ];

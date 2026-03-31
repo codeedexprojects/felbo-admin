@@ -1,11 +1,12 @@
 'use client';
 
-import * as React from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
-import { Search, Users, CheckCircle2, Clock, Ban } from 'lucide-react';
+import { Search, Users, CheckCircle2, Clock, Ban, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { TablePagination } from '@/components/ui/table-pagination';
 import {
   Table,
   TableBody,
@@ -22,9 +23,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useVendors } from '@/features/vendors/hooks';
-import { columns } from './VendorColumns';
+import { createVendorColumns } from './VendorColumns';
 import { useMounted } from '@/hooks/use-mounted';
-import { VendorListFilter, Vendor } from '../types';
+import { useDebounce } from '@/hooks/useDebounce';
+import { VendorListFilter } from '../types';
 
 // Skeleton row component
 function SkeletonRow({ cols }: { cols: number }) {
@@ -40,16 +42,27 @@ function SkeletonRow({ cols }: { cols: number }) {
 }
 
 export function VendorTable() {
-  const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 });
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+  const [searchValue, setSearchValue] = useState('');
+  const debouncedSearch = useDebounce(searchValue, 500);
 
-  const [filter, setFilter] = React.useState<VendorListFilter>({ page: 1, limit: 10 });
+  const [filter, setFilter] = useState<VendorListFilter>({ page: 1, limit: 10 });
 
-  React.useEffect(() => {
+  useEffect(() => {
     setFilter((prev) => ({ ...prev, page: pagination.pageIndex + 1, limit: pagination.pageSize }));
   }, [pagination]);
 
+  useEffect(() => {
+    setFilter((prev) => ({ ...prev, search: debouncedSearch || undefined, page: 1 }));
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, [debouncedSearch]);
+
   const { data, isLoading, isError } = useVendors(filter);
   const mounted = useMounted();
+
+  const counts = data?.counts;
+
+  const columns = useMemo(() => createVendorColumns(), []);
 
   const table = useReactTable({
     data: data?.vendors || [],
@@ -61,52 +74,48 @@ export function VendorTable() {
     state: { pagination },
   });
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilter((prev) => ({ ...prev, search: e.target.value, page: 1 }));
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-  };
-
   if (!mounted) return null;
 
-  // Summary stats
-  const vendors = data?.vendors || [];
-  const totalVendors = data?.total || 0;
-  const activeVendors = vendors.filter((v: Vendor) => v.status === 'ACTIVE').length;
-  const pendingVerification = vendors.filter(
-    (v: Vendor) => v.verificationStatus === 'PENDING'
-  ).length;
-  const suspendedVendors = vendors.filter((v: Vendor) => v.status === 'SUSPENDED').length;
+  // Summary stats — sourced from server-side counts (accurate across all pages)
 
   const stats = [
     {
       label: 'Total Vendors',
-      value: totalVendors,
+      value: counts?.total ?? data?.total ?? 0,
       icon: Users,
       color: 'text-blue-600',
       bg: 'bg-blue-50',
     },
     {
       label: 'Active',
-      value: activeVendors,
+      value: counts?.active ?? 0,
       icon: CheckCircle2,
       color: 'text-emerald-600',
       bg: 'bg-emerald-50',
     },
     {
       label: 'Pending Verification',
-      value: pendingVerification,
+      value: counts?.pendingVerification ?? 0,
       icon: Clock,
       color: 'text-amber-600',
       bg: 'bg-amber-50',
     },
     {
       label: 'Suspended',
-      value: suspendedVendors,
+      value: counts?.suspended ?? 0,
       icon: Ban,
       color: 'text-red-500',
       bg: 'bg-red-50',
     },
   ];
+
+  const isFiltered = !!(searchValue || filter.status || filter.verificationStatus);
+
+  const handleClearFilters = () => {
+    setSearchValue('');
+    setFilter({ page: 1, limit: 10 });
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  };
 
   return (
     <div className="space-y-5">
@@ -139,7 +148,8 @@ export function VendorTable() {
           <Input
             placeholder="Search vendors..."
             className="pl-8 h-8 text-sm border-border/60 bg-muted/30 focus-visible:bg-background"
-            onChange={handleSearch}
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
           />
         </div>
 
@@ -186,6 +196,18 @@ export function VendorTable() {
             <SelectItem value="REJECTED">Rejected</SelectItem>
           </SelectContent>
         </Select>
+
+        {isFiltered && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleClearFilters}
+            className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" />
+            Clear
+          </Button>
+        )}
       </div>
 
       {/* Table */}
@@ -254,29 +276,15 @@ export function VendorTable() {
       {/* Pagination */}
       <div className="flex items-center justify-between px-1">
         <p className="text-xs text-muted-foreground">
-          Page {pagination.pageIndex + 1} of {data?.totalPages || 1}
-          {totalVendors > 0 && ` · ${totalVendors} vendors`}
+          {(counts?.total ?? data?.total ?? 0) > 0
+            ? `${counts?.total ?? data?.total} vendors`
+            : 'No vendors'}
         </p>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 text-xs border-border/60"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 text-xs border-border/60"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Next
-          </Button>
-        </div>
+        <TablePagination
+          pageIndex={pagination.pageIndex}
+          totalPages={data?.totalPages || 1}
+          onPageChange={(idx) => setPagination((prev) => ({ ...prev, pageIndex: idx }))}
+        />
       </div>
     </div>
   );

@@ -76,8 +76,21 @@
   --sidebar-ring: #0d6868;
 }
 
+html,
 body {
+  height: 100%;
+  overflow: hidden;
   @apply bg-background text-foreground;
+}
+
+*,
+*::before,
+*::after {
+  border-color: var(--border);
+}
+
+* {
+  outline: none;
 }
 
 @theme inline {

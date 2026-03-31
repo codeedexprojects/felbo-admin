@@ -1,12 +1,12 @@
 'use client';
 
-import * as React from 'react';
+import React, { useState, useEffect } from 'react';
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
-import { Search, Users, CheckCircle2, Clock, Ban, Filter } from 'lucide-react';
+import { Search, Users, CheckCircle2, Clock, Ban, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-
 import { Input } from '@/components/ui/input';
+import { TablePagination } from '@/components/ui/table-pagination';
 import {
   Table,
   TableBody,
@@ -16,10 +16,11 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-import { useVendors } from '@/features/vendors/hooks';
-import { verificationColumns } from './VerificationColumns'; // Specialized columns
+import { useVerificationRequests } from '@/features/vendors/hooks';
+import { createVerificationColumns } from './VerificationColumns';
 import { useMounted } from '@/hooks/use-mounted';
-import { VendorListFilter, Vendor } from '@/features/vendors/types';
+import { useDebounce } from '@/hooks/useDebounce';
+import { VerificationRequestsFilter } from '@/features/vendors/types';
 
 // Skeleton row component
 function SkeletonRow({ cols }: { cols: number }) {
@@ -35,25 +36,36 @@ function SkeletonRow({ cols }: { cols: number }) {
 }
 
 export function VendorVerificationTable() {
-  const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 });
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+  const [searchValue, setSearchValue] = useState('');
+  const debouncedSearch = useDebounce(searchValue, 500);
 
-  // Hardcode verificationStatus to PENDING
-  const [filter, setFilter] = React.useState<VendorListFilter>({
+  // Always fetches PENDING — filter is baked into the dedicated endpoint
+  const [filter, setFilter] = useState<VerificationRequestsFilter>({
     page: 1,
     limit: 10,
-    verificationStatus: 'PENDING',
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     setFilter((prev) => ({ ...prev, page: pagination.pageIndex + 1, limit: pagination.pageSize }));
   }, [pagination]);
 
-  const { data, isLoading, isError } = useVendors(filter);
+  useEffect(() => {
+    setFilter((prev) => ({ ...prev, search: debouncedSearch || undefined, page: 1 }));
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, [debouncedSearch]);
+
+  const { data, isLoading, isError } = useVerificationRequests(filter);
   const mounted = useMounted();
 
+  const counts = data?.counts;
+
+  const columns = React.useMemo(() => createVerificationColumns(), []);
+
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: data?.vendors || [],
-    columns: verificationColumns,
+    columns,
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
     pageCount: data?.totalPages || -1,
@@ -61,47 +73,32 @@ export function VendorVerificationTable() {
     state: { pagination },
   });
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilter((prev) => ({ ...prev, search: e.target.value, page: 1 }));
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-  };
-
   if (!mounted) return null;
 
-  // Stats
-  const vendors = data?.vendors || [];
-  const totalPending = data?.total || 0;
-  // These counts can only be accurate if we fetch all or have separate stats API.
-  // For now, based on current page or just placeholder if not available.
-  const associationPending = vendors.filter(
-    (v: Vendor) => v.registrationType === 'ASSOCIATION'
-  ).length;
-  const independentPending = vendors.filter(
-    (v: Vendor) => v.registrationType === 'INDEPENDENT'
-  ).length;
+  // Stats — sourced from server-side counts (accurate across all pages)
 
   const stats = [
     {
       label: 'Pending Requests',
-      value: totalPending,
+      value: counts?.pending ?? data?.total ?? 0,
       icon: Clock,
       color: 'text-amber-600',
       bg: 'bg-amber-50',
     },
     {
       label: 'Association',
-      value: associationPending + '+',
+      value: counts?.association ?? 0,
       icon: Users,
       color: 'text-blue-600',
       bg: 'bg-blue-50',
-    }, // Approximate
+    },
     {
       label: 'Independent',
-      value: independentPending + '+',
+      value: counts?.independent ?? 0,
       icon: Users,
       color: 'text-purple-600',
       bg: 'bg-purple-50',
-    }, // Approximate
+    },
   ];
 
   return (
@@ -135,19 +132,25 @@ export function VendorVerificationTable() {
           <Input
             placeholder="Search request..."
             className="pl-8 h-8 text-sm border-border/60 bg-muted/30 focus-visible:bg-background"
-            onChange={handleSearch}
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
           />
         </div>
 
-        {/* Filters placeholder - Requesting Registration Type filter support from backend later */}
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 gap-1.5 text-xs border-border/60 text-muted-foreground"
-        >
-          <Filter className="h-3 w-3" />
-          More Filters
-        </Button>
+        {!!searchValue && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSearchValue('');
+              setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+            }}
+            className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" />
+            Clear
+          </Button>
+        )}
       </div>
 
       {/* Table */}
@@ -174,12 +177,10 @@ export function VendorVerificationTable() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <SkeletonRow key={i} cols={verificationColumns.length} />
-              ))
+              Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} cols={columns.length} />)
             ) : isError ? (
               <TableRow>
-                <TableCell colSpan={verificationColumns.length} className="h-32 text-center">
+                <TableCell colSpan={columns.length} className="h-32 text-center">
                   <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <Ban className="h-8 w-8 opacity-30" />
                     <p className="text-sm">Failed to load requests.</p>
@@ -201,7 +202,7 @@ export function VendorVerificationTable() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={verificationColumns.length} className="h-40 text-center">
+                <TableCell colSpan={columns.length} className="h-40 text-center">
                   <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <CheckCircle2 className="h-8 w-8 opacity-30 text-emerald-500" />
                     <p className="text-sm font-medium">All caught up!</p>
@@ -217,29 +218,15 @@ export function VendorVerificationTable() {
       {/* Pagination */}
       <div className="flex items-center justify-between px-1">
         <p className="text-xs text-muted-foreground">
-          Page {pagination.pageIndex + 1} of {data?.totalPages || 1}
-          {totalPending > 0 && ` · ${totalPending} requests`}
+          {(counts?.pending ?? data?.total ?? 0) > 0
+            ? `${counts?.pending ?? data?.total} requests`
+            : 'No requests'}
         </p>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 text-xs border-border/60"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 text-xs border-border/60"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Next
-          </Button>
-        </div>
+        <TablePagination
+          pageIndex={pagination.pageIndex}
+          totalPages={data?.totalPages || 1}
+          onPageChange={(idx) => setPagination((prev) => ({ ...prev, pageIndex: idx }))}
+        />
       </div>
     </div>
   );

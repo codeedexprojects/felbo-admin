@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
 import { navItems } from '@/config/nav';
+import { useSuperAdminDashboard } from '@/features/dashboard/hooks';
 
 export function MobileSidebar() {
   const [open, setOpen] = useState(false);
@@ -26,6 +27,11 @@ export function MobileSidebar() {
     if (!item.roles) return true;
     return admin && item.roles.includes(admin.role);
   });
+
+  const isSuperOrSub = admin?.role === 'SUPER_ADMIN' || admin?.role === 'SUB_ADMIN';
+
+  const { data: dashboardData } = useSuperAdminDashboard({ enabled: isSuperOrSub });
+  const pendingCount = dashboardData?.pendingVerifications || 0;
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -51,12 +57,17 @@ export function MobileSidebar() {
                     href={item.href}
                     onClick={() => setOpen(false)}
                     className={cn(
-                      'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground',
+                      'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground relative',
                       isActive ? 'bg-accent text-accent-foreground' : 'transparent'
                     )}
                   >
                     <item.icon className="h-4 w-4" />
                     <span>{item.title}</span>
+                    {item.title === 'Vendors' && pendingCount > 0 && (
+                      <span className="ml-auto flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 px-1 text-[0.625rem] font-bold text-white">
+                        {pendingCount > 99 ? '99+' : pendingCount}
+                      </span>
+                    )}
                   </Link>
                 );
               })}

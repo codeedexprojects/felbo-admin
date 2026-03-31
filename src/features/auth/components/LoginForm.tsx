@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema, LoginInput } from '@/features/auth/types';
@@ -8,10 +9,27 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
+function getLoginError(error: unknown): string {
+  const msg = (error instanceof Error ? error.message : '') || '';
+  if (!msg || msg.toLowerCase().includes('network')) {
+    return 'Unable to reach the server. Please check your connection or try again later.';
+  }
+  if (msg.toLowerCase().includes('failed with status code 5')) {
+    return 'Something went wrong on our end. Please try again in a moment.';
+  }
+  if (msg.toLowerCase().includes('timeout')) {
+    return 'The request timed out. Please try again.';
+  }
+
+  return msg || 'Something went wrong. Please try again.';
+}
+
 export const LoginForm = () => {
+  const [showPassword, setShowPassword] = useState(false);
+
   const {
     register,
     handleSubmit,
@@ -27,7 +45,7 @@ export const LoginForm = () => {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full max-w-md mx-auto border-0 shadow-xl shadow-gray-100">
       <CardHeader>
         <CardTitle className="text-2xl font-bold text-center">Admin Login</CardTitle>
         <CardDescription className="text-center">
@@ -39,10 +57,8 @@ export const LoginForm = () => {
           {isError && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription>
-                {error instanceof Error ? error.message : 'Invalid credentials. Please try again.'}
-              </AlertDescription>
+              <AlertTitle>Login failed</AlertTitle>
+              <AlertDescription>{getLoginError(error)}</AlertDescription>
             </Alert>
           )}
 
@@ -50,8 +66,8 @@ export const LoginForm = () => {
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
-              type="email"
-              placeholder="admin@felbo.com"
+              type="text"
+              placeholder="Enter your email"
               {...register('email')}
               disabled={isPending}
             />
@@ -60,11 +76,27 @@ export const LoginForm = () => {
 
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" {...register('password')} disabled={isPending} />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                {...register('password')}
+                disabled={isPending}
+                className="pr-10"
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 transition-colors"
+                onClick={() => setShowPassword((prev) => !prev)}
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
             {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
           </div>
 
-          <Button type="submit" className="w-full" disabled={isPending}>
+          <Button type="submit" className="w-full bg-[#041919]" disabled={isPending}>
             {isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
