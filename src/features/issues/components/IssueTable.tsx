@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { AlertOctagon, Ban, CheckCircle2, Clock, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -38,6 +39,7 @@ function SkeletonRow({ cols }: { cols: number }) {
 }
 
 export function IssueTable() {
+  const router = useRouter();
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
   const [filter, setFilter] = useState<IssueListFilter>({ page: 1, limit: 10 });
 
@@ -222,10 +224,17 @@ export function IssueTable() {
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  className="border-border/40 transition-colors hover:bg-muted/30"
+                  onClick={() => router.push(`/dashboard/issues/${row.original.id}`)}
+                  className="cursor-pointer border-border/40 transition-colors hover:bg-muted/30"
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="px-4 py-3 text-sm">
+                    <TableCell
+                      key={cell.id}
+                      className="px-4 py-3 text-sm"
+                      onClick={
+                        cell.column.id === 'actions' ? (e) => e.stopPropagation() : undefined
+                      }
+                    >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { Search, Users, CheckCircle2, Ban, X } from 'lucide-react';
 
@@ -51,6 +52,7 @@ function SkeletonRow({ cols }: { cols: number }) {
 }
 
 export function UserTable() {
+  const router = useRouter();
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
   const [searchValue, setSearchValue] = useState('');
   const debouncedSearch = useDebounce(searchValue, 500);
@@ -279,10 +281,17 @@ export function UserTable() {
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && 'selected'}
-                    className="group border-border/40 hover:bg-muted/30 transition-colors"
+                    onClick={() => router.push(`/dashboard/users/${row.original.id}`)}
+                    className="group cursor-pointer border-border/40 hover:bg-muted/30 transition-colors"
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id} className="p-3">
+                      <TableCell
+                        key={cell.id}
+                        className="p-3"
+                        onClick={
+                          cell.column.id === 'actions' ? (e) => e.stopPropagation() : undefined
+                        }
+                      >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </TableCell>
                     ))}

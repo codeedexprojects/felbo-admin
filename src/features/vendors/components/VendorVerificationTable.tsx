@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { Search, Users, CheckCircle2, Clock, Ban, X } from 'lucide-react';
 
@@ -36,6 +37,7 @@ function SkeletonRow({ cols }: { cols: number }) {
 }
 
 export function VendorVerificationTable() {
+  const router = useRouter();
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
   const [searchValue, setSearchValue] = useState('');
   const debouncedSearch = useDebounce(searchValue, 500);
@@ -191,10 +193,19 @@ export function VendorVerificationTable() {
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  className="border-border/40 transition-colors hover:bg-muted/30"
+                  onClick={() => router.push(`/dashboard/vendors/requests/${row.original.id}`)}
+                  className="cursor-pointer border-border/40 transition-colors hover:bg-muted/30"
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="px-4 py-3 text-sm">
+                    <TableCell
+                      key={cell.id}
+                      className="px-4 py-3 text-sm"
+                      onClick={
+                        cell.column.id === 'view' || cell.column.id === 'actions'
+                          ? (e) => e.stopPropagation()
+                          : undefined
+                      }
+                    >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}

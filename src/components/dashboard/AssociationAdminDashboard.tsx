@@ -2,6 +2,7 @@ import { Users, TrendingUp, CalendarCheck2, ShieldAlert, Store, Trophy } from 'l
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DashboardSection } from './DashboardSection';
 import { StatCard } from './StatCard';
+import Link from 'next/link';
 import { useAssociationAdminDashboard, useTopAssociationVendors } from '@/features/dashboard/hooks';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -38,30 +39,39 @@ export function AssociationAdminDashboard() {
     <div className="space-y-8 animate-in fade-in duration-700">
       <DashboardSection title="Association Overview">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <StatCard
-            index={1}
-            title="Vendors"
-            value={data?.myVendorsCount.toLocaleString() ?? '0'}
-            icon={Users}
-            color="blue"
-          />
-          <StatCard
-            index={2}
-            title="Share Pending"
-            value={`₹${(data?.myVendorsRevenue ?? 0).toLocaleString('en-IN', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}`}
-            icon={TrendingUp}
-            color="emerald"
-          />
-          <StatCard
-            index={3}
-            title="Member Bookings"
-            value={data?.myVendorsBookings.total.toLocaleString() ?? '0'}
-            icon={CalendarCheck2}
-            color="amber"
-          />
+          <Link href="/dashboard/association" className="block w-full">
+            <StatCard
+              index={1}
+              title="Vendors"
+              value={data?.myVendorsCount.toLocaleString() ?? '0'}
+              icon={Users}
+              description="Registered members"
+              color="blue"
+            />
+          </Link>
+          <Link href="/dashboard/finance/revenue" className="block w-full">
+            <StatCard
+              index={2}
+              title="Share Pending"
+              value={`₹${(data?.myVendorsRevenue ?? 0).toLocaleString('en-IN', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}`}
+              icon={TrendingUp}
+              description="Revenue share"
+              color="emerald"
+            />
+          </Link>
+          <Link href="/dashboard/bookings" className="block w-full">
+            <StatCard
+              index={3}
+              title="Member Bookings"
+              value={data?.myVendorsBookings.total.toLocaleString() ?? '0'}
+              icon={CalendarCheck2}
+              description="Total bookings"
+              color="amber"
+            />
+          </Link>
         </div>
       </DashboardSection>
 
