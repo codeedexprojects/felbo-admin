@@ -13,7 +13,7 @@ export function RecentItem({
 }) {
   return (
     <div
-      className="flex items-center justify-between py-3 px-3 -mx-2 rounded-lg group cursor-default transition-all duration-200 hover:bg-muted/50 border border-transparent hover:border-border/40"
+      className="flex items-center justify-between py-3 px-3 -mx-2 rounded-lg group cursor-pointer transition-all duration-200 hover:bg-muted/50 border border-transparent hover:border-border/40"
       style={{
         animation: `fadeIn 0.5s ease-out forwards ${index * 100}ms`,
         opacity: 0,

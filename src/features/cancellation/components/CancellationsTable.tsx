@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { Search, Calendar as CalendarIcon, X } from 'lucide-react';
 
@@ -45,6 +46,7 @@ function SkeletonRow({ cols }: { cols: number }) {
 }
 
 export function CancellationsTable() {
+  const router = useRouter();
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
   const [searchValue, setSearchValue] = useState('');
   const debouncedSearch = useDebounce(searchValue, 500);
@@ -229,10 +231,19 @@ export function CancellationsTable() {
                 table.getRowModel().rows.map((row) => (
                   <TableRow
                     key={row.id}
-                    className="group border-border/40 hover:bg-muted/30 transition-colors"
+                    onClick={() =>
+                      router.push(`/dashboard/cancellation-management/${row.original.id}`)
+                    }
+                    className="group cursor-pointer border-border/40 hover:bg-muted/30 transition-colors"
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id} className="p-3">
+                      <TableCell
+                        key={cell.id}
+                        className="p-3"
+                        onClick={
+                          cell.column.id === 'actions' ? (e) => e.stopPropagation() : undefined
+                        }
+                      >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </TableCell>
                     ))}

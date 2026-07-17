@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { Store, Ban } from 'lucide-react';
 
@@ -33,6 +34,7 @@ function SkeletonRow({ cols }: { cols: number }) {
 export function ShopApprovalTable() {
   'use no memo';
 
+  const router = useRouter();
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
   const [filter, setFilter] = useState<PendingShopsFilter>({ page: 1, limit: 10 });
   const columns = useMemo(() => createShopApprovalColumns(), []);
@@ -96,10 +98,17 @@ export function ShopApprovalTable() {
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  className="border-border/40 transition-colors hover:bg-muted/30"
+                  onClick={() => router.push(`/dashboard/shops/approval/${row.original.id}`)}
+                  className="cursor-pointer border-border/40 transition-colors hover:bg-muted/30"
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="px-4 py-3 text-sm">
+                    <TableCell
+                      key={cell.id}
+                      className="px-4 py-3 text-sm"
+                      onClick={
+                        cell.column.id === 'actions' ? (e) => e.stopPropagation() : undefined
+                      }
+                    >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}

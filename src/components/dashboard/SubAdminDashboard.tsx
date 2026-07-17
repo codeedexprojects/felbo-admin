@@ -42,42 +42,50 @@ export function SubAdminDashboard() {
     <div className="space-y-8 animate-in fade-in duration-700">
       <DashboardSection title="Operations Center">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <StatCard
-            index={1}
-            title="Total Users"
-            value={data?.totalUsers.toLocaleString() ?? '0'}
-            icon={Users}
-            description="All time registered"
-            trend="up"
-            color="blue"
-          />
-          <StatCard
-            index={2}
-            title="Total Vendors"
-            value={data?.totalVendors.toLocaleString() ?? '0'}
-            icon={Store}
-            description="All time registered"
-            trend="up"
-            color="violet"
-          />
-          <StatCard
-            index={3}
-            title="Total Bookings"
-            value={data?.totalBookings.toLocaleString() ?? '0'}
-            icon={CalendarCheck2}
-            description="All time bookings"
-            trend="up"
-            color="emerald"
-          />
-          <StatCard
-            index={4}
-            title="Today's Bookings"
-            value={data?.todaysBookings.toLocaleString() ?? '0'}
-            icon={Activity}
-            description="Bookings today"
-            trend="up"
-            color="amber"
-          />
+          <Link href="/dashboard/users" className="block w-full">
+            <StatCard
+              index={1}
+              title="Total Users"
+              value={data?.totalUsers.toLocaleString() ?? '0'}
+              icon={Users}
+              description="All time registered"
+              trend="up"
+              color="blue"
+            />
+          </Link>
+          <Link href="/dashboard/vendors" className="block w-full">
+            <StatCard
+              index={2}
+              title="Total Vendors"
+              value={data?.totalVendors.toLocaleString() ?? '0'}
+              icon={Store}
+              description="All time registered"
+              trend="up"
+              color="violet"
+            />
+          </Link>
+          <Link href="/dashboard/bookings" className="block w-full">
+            <StatCard
+              index={3}
+              title="Total Bookings"
+              value={data?.totalBookings.toLocaleString() ?? '0'}
+              icon={CalendarCheck2}
+              description="All time bookings"
+              trend="up"
+              color="emerald"
+            />
+          </Link>
+          <Link href="/dashboard/bookings" className="block w-full">
+            <StatCard
+              index={4}
+              title="Today's Bookings"
+              value={data?.todaysBookings.toLocaleString() ?? '0'}
+              icon={Activity}
+              description="Bookings today"
+              trend="up"
+              color="amber"
+            />
+          </Link>
           <Link href="/dashboard/vendors/requests" className="block w-full">
             <StatCard
               index={5}
@@ -120,14 +128,15 @@ export function SubAdminDashboard() {
               <p className="text-center text-muted-foreground py-8">No recent issues</p>
             ) : (
               data?.recentIssues.map((issue, i) => (
-                <RecentItem
-                  key={issue.id}
-                  index={i}
-                  initials={issue.userName.substring(0, 2).toUpperCase()}
-                  primary={issue.userName}
-                  secondary={issue.reason}
-                  tertiary={issue.status}
-                />
+                <Link key={issue.id} href={`/dashboard/issues/${issue.id}`} className="block">
+                  <RecentItem
+                    index={i}
+                    initials={issue.userName.substring(0, 2).toUpperCase()}
+                    primary={issue.userName}
+                    secondary={issue.reason}
+                    tertiary={issue.status}
+                  />
+                </Link>
               ))
             )}
           </CardContent>
