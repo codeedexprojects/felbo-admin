@@ -25,3 +25,14 @@ export interface AssociationAdminDashboardData {
   };
   myVendorsRevenue: number;
 }
+
+export interface TopAssociationVendor {
+  vendorId: string;
+  vendorName: string;
+  vendorPhone: string;
+  vendorProfilePhoto: string | null;
+  shopId: string;
+  shopName: string;
+  shopPhoto: string | null;
+  totalBookings: number;
+}

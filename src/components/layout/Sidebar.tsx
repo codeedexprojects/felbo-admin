@@ -24,10 +24,12 @@ export function Sidebar() {
     return admin && item.roles.includes(admin.role);
   });
 
-  const { data: dashboardData } = useSuperAdminDashboard();
+  const isSuperOrSub = admin?.role === 'SUPER_ADMIN' || admin?.role === 'SUB_ADMIN';
+
+  const { data: dashboardData } = useSuperAdminDashboard({ enabled: isSuperOrSub });
   const pendingCount = dashboardData?.pendingVerifications || 0;
 
-  const { data: requestCounts } = usePendingShopCount();
+  const { data: requestCounts } = usePendingShopCount({ enabled: isSuperOrSub });
   const pendingShopCount = requestCounts?.count || 0;
 
   if (!mounted) return null;

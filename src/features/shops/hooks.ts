@@ -41,9 +41,11 @@ export const useApproveShop = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pending-shops'] });
+      queryClient.invalidateQueries({ queryKey: ['pending-shop-count'] });
     },
     onError: () => {
       queryClient.invalidateQueries({ queryKey: ['pending-shops'] });
+      queryClient.invalidateQueries({ queryKey: ['pending-shop-count'] });
       toast.error('Failed to approve shop. Please try again.');
     },
   });
@@ -70,9 +72,11 @@ export const useRejectShop = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pending-shops'] });
+      queryClient.invalidateQueries({ queryKey: ['pending-shop-count'] });
     },
     onError: () => {
       queryClient.invalidateQueries({ queryKey: ['pending-shops'] });
+      queryClient.invalidateQueries({ queryKey: ['pending-shop-count'] });
       toast.error('Failed to reject shop. Please try again.');
     },
   });

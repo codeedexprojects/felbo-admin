@@ -15,6 +15,7 @@ import {
   ClipboardCheck,
   UserCircle,
   Coins,
+  BellRing,
 } from 'lucide-react';
 import { AdminRole } from '@/types/api';
 
@@ -113,6 +114,12 @@ export const navItems: NavItem[] = [
     href: '/dashboard/avatars',
     icon: UserCircle,
     roles: ['SUPER_ADMIN', 'SUB_ADMIN'],
+  },
+  {
+    title: 'Notifications',
+    href: '/dashboard/notifications',
+    icon: BellRing,
+    roles: ['SUPER_ADMIN'],
   },
   {
     title: 'System Config',

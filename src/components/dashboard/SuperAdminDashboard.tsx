@@ -116,7 +116,6 @@ export function SuperAdminDashboard() {
               title="Pending Verifications"
               value={data?.pendingVerifications.toLocaleString() ?? '0'}
               icon={Clock}
-              description="Vendors awaiting approval"
               color="rose"
             />
           </Link>

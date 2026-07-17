@@ -65,17 +65,6 @@ export function StatCard({
           {value}
         </span>
       </div>
-      {(description || trend) && (
-        <div className="mt-2 flex items-center gap-2">
-          {trend === 'up' && (
-            <span className="flex items-center text-xs font-medium text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded-full">
-              <ArrowUpRight className="mr-1 h-3 w-3" />
-              +12.5%
-            </span>
-          )}
-          <p className="text-xs text-muted-foreground/80">{description}</p>
-        </div>
-      )}
     </div>
   );
 }
