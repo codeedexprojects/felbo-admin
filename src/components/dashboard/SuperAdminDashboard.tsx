@@ -3,7 +3,6 @@ import {
   Store,
   CalendarCheck2,
   Activity,
-  MoreHorizontal,
   Users,
   Clock,
   ShieldAlert,
@@ -15,6 +14,7 @@ import { RecentItem } from './RecentItem';
 import Link from 'next/link';
 import { useSuperAdminDashboard } from '@/features/dashboard/hooks';
 import { Skeleton } from '@/components/ui/skeleton';
+import { RevenueChart } from '@/features/finance/components/RevenueChart';
 
 export function SuperAdminDashboard() {
   const { data, isLoading, isError, error } = useSuperAdminDashboard();
@@ -125,26 +125,9 @@ export function SuperAdminDashboard() {
       {/* Main Content Grid */}
       <div className="grid gap-6 md:grid-cols-7 lg:grid-cols-7">
         {/* Overview Chart Area */}
-        <Card className="col-span-4 shadow-sm border-border/60 bg-gradient-to-br from-card to-card/50 backdrop-blur-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 border-b border-border/40">
-            <div className="space-y-1">
-              <CardTitle className="text-base font-semibold">Revenue Overview</CardTitle>
-              <p className="text-xs text-muted-foreground">Monthly revenue performance</p>
-            </div>
-            <MoreHorizontal className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors" />
-          </CardHeader>
-          <CardContent className="pl-0 pt-6">
-            <div className="h-[300px] w-full flex items-center justify-center m-4 mt-0 relative">
-              <div className="absolute inset-0 bg-gradient-to-t from-primary/5 to-transparent rounded-b-md" />
-              <div className="flex flex-col items-center gap-2 z-10">
-                <Activity className="h-10 w-10 text-primary/20 animate-pulse" />
-                <span className="text-sm text-muted-foreground font-medium">
-                  Chart Visualization Loading...
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="col-span-4">
+          <RevenueChart />
+        </div>
 
         {/* Recent Issues List */}
         <Card className="col-span-3 shadow-sm border-border/60 bg-gradient-to-br from-card to-card/50 backdrop-blur-sm">
