@@ -239,3 +239,29 @@ export interface VendorBookingListResponse {
   limit: number;
   totalPages: number;
 }
+
+export interface UpdateVendorProfileInput {
+  ownerName?: string;
+  email?: string;
+}
+
+export interface UpdateShopInput {
+  name?: string;
+  description?: string;
+  shopType?: 'MENS' | 'WOMENS' | 'UNISEX';
+  address?: AddressInput;
+  photos?: string[];
+}
+
+export interface UpdateServiceInput {
+  name?: string;
+  basePrice?: number;
+  baseDurationMinutes?: number;
+  applicableFor?: 'MENS' | 'WOMENS' | 'ALL';
+  description?: string;
+}
+
+export interface UpdateBarberInput {
+  name?: string;
+  phone?: string;
+}

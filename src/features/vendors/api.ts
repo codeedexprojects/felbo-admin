@@ -8,6 +8,10 @@ import {
   VerificationRequestsResponse,
   VendorBookingListResponse,
   PendingShopCount,
+  UpdateVendorProfileInput,
+  UpdateShopInput,
+  UpdateServiceInput,
+  UpdateBarberInput,
 } from './types';
 import { ListBookingsFilter } from '../bookings/types';
 import { ApiResponse } from '@/types/api';
@@ -111,4 +115,57 @@ export const getVendorBookings = async (
     throw new Error(response.data.error?.message || 'Failed to fetch vendor bookings');
   }
   return response.data.data;
+};
+
+export const updateVendorProfile = async (
+  id: string,
+  input: UpdateVendorProfileInput
+): Promise<void> => {
+  const response = await axios.patch<ApiResponse<void>>(`/admin/vendors/${id}/profile`, input);
+  if (!response.data.success) {
+    throw new Error(response.data.error?.message || 'Failed to update vendor profile');
+  }
+};
+
+export const updateShop = async (
+  vendorId: string,
+  shopId: string,
+  input: UpdateShopInput
+): Promise<void> => {
+  const response = await axios.patch<ApiResponse<void>>(
+    `/admin/vendors/${vendorId}/shops/${shopId}`,
+    input
+  );
+  if (!response.data.success) {
+    throw new Error(response.data.error?.message || 'Failed to update shop');
+  }
+};
+
+export const updateShopService = async (
+  vendorId: string,
+  shopId: string,
+  serviceId: string,
+  input: UpdateServiceInput
+): Promise<void> => {
+  const response = await axios.patch<ApiResponse<void>>(
+    `/admin/vendors/${vendorId}/shops/${shopId}/services/${serviceId}`,
+    input
+  );
+  if (!response.data.success) {
+    throw new Error(response.data.error?.message || 'Failed to update service');
+  }
+};
+
+export const updateBarber = async (
+  vendorId: string,
+  barberId: string,
+  input: UpdateBarberInput
+): Promise<void> => {
+  const response = await axios.patch<ApiResponse<void>>(
+    `/admin/vendors/${vendorId}/barbers/${barberId}`,
+    input
+  );
+  if (!response.data.success) {
+    throw new Error(response.data.error?.message || 'Failed to update barber');
+  }
 };

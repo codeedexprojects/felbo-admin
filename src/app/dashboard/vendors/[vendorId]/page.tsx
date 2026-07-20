@@ -29,7 +29,12 @@ import {
   CalendarDays,
   Calendar as CalendarIcon,
   X,
+  Pencil,
 } from 'lucide-react';
+import { VendorProfileEditDialog } from '@/features/vendors/components/VendorProfileEditDialog';
+import { ShopEditDialog } from '@/features/vendors/components/ShopEditDialog';
+import { ServiceEditDialog } from '@/features/vendors/components/ServiceEditDialog';
+import { BarberEditDialog } from '@/features/vendors/components/BarberEditDialog';
 import Image from 'next/image';
 import { useState, useEffect, useMemo } from 'react';
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
@@ -494,12 +499,22 @@ function WorkingHoursSection({ workingHours }: { workingHours: WorkingHours }) {
 function ShopCard({
   shop,
   index,
+  vendorId,
+  canEdit,
 }: {
   shop: NonNullable<ReturnType<typeof useVendorDetail>['data']>['shops'][number];
   index: number;
+  vendorId: string;
+  canEdit: boolean;
 }) {
   const [expanded, setExpanded] = useState(index === 0); // first shop open by default
   const [showHours, setShowHours] = useState(false);
+  const [editingShop, setEditingShop] = useState(false);
+  const [editingBarberId, setEditingBarberId] = useState<string | null>(null);
+  const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
+
+  const editingBarber = shop.barbers.find((b) => b.id === editingBarberId);
+  const editingService = shop.services.find((s) => s.id === editingServiceId);
 
   const addressLine = [
     shop.address.line1,
@@ -546,6 +561,19 @@ function ShopCard({
             >
               {shop.isAvailable ? 'Available' : 'Unavailable'}
             </span>
+            {canEdit && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEditingShop(true);
+                }}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+            )}
             <div
               className={cn(
                 'p-1 rounded-full bg-muted/50 transition-transform duration-300',
@@ -557,6 +585,19 @@ function ShopCard({
           </div>
         </div>
       </CardHeader>
+
+      {canEdit && (
+        <ShopEditDialog
+          open={editingShop}
+          onClose={() => setEditingShop(false)}
+          vendorId={vendorId}
+          shopId={shop.id}
+          name={shop.name}
+          shopType={shop.shopType}
+          address={shop.address}
+          photos={shop.photos}
+        />
+      )}
 
       {expanded && (
         <CardContent className="space-y-6 pt-5 bg-card">
@@ -695,7 +736,7 @@ function ShopCard({
                         )
                       ) : null}
                     </div>
-                    <div className="absolute top-3 right-3">
+                    <div className="absolute top-3 right-3 flex items-center gap-1.5">
                       <div
                         className={cn(
                           'h-2 w-2 rounded-full',
@@ -705,11 +746,32 @@ function ShopCard({
                         )}
                         title={barber.isAvailable ? 'Online' : 'Offline'}
                       />
+                      {canEdit && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 text-muted-foreground opacity-0 group-hover/barber:opacity-100 hover:text-foreground transition-opacity"
+                          onClick={() => setEditingBarberId(barber.id)}
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
             </div>
+          )}
+
+          {canEdit && editingBarber && (
+            <BarberEditDialog
+              open={!!editingBarber}
+              onClose={() => setEditingBarberId(null)}
+              vendorId={vendorId}
+              barberId={editingBarber.id}
+              name={editingBarber.name}
+              phone={editingBarber.phone}
+            />
           )}
 
           {/* Services */}
@@ -723,7 +785,7 @@ function ShopCard({
                 {shop.services.map((service) => (
                   <div
                     key={service.id}
-                    className="flex justify-between gap-4 rounded-xl border border-border/60 bg-muted/10 p-4 transition-all hover:border-primary/10 hover:shadow-sm"
+                    className="group/service relative flex justify-between gap-4 rounded-xl border border-border/60 bg-muted/10 p-4 transition-all hover:border-primary/10 hover:shadow-sm"
                   >
                     <div className="space-y-1">
                       <p className="text-sm font-bold text-foreground">{service.name}</p>
@@ -739,10 +801,34 @@ function ShopCard({
                         {service.baseDurationMinutes} MIN
                       </p>
                     </div>
+                    {canEdit && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-2 right-2 h-6 w-6 text-muted-foreground opacity-0 group-hover/service:opacity-100 hover:text-foreground transition-opacity"
+                        onClick={() => setEditingServiceId(service.id)}
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </Button>
+                    )}
                   </div>
                 ))}
               </div>
             </div>
+          )}
+
+          {canEdit && editingService && (
+            <ServiceEditDialog
+              open={!!editingService}
+              onClose={() => setEditingServiceId(null)}
+              vendorId={vendorId}
+              shopId={shop.id}
+              serviceId={editingService.id}
+              name={editingService.name}
+              basePrice={editingService.basePrice}
+              baseDurationMinutes={editingService.baseDurationMinutes}
+              description={editingService.description}
+            />
           )}
 
           {/* Empty state for barbers+services */}
@@ -771,6 +857,8 @@ export default function VendorDetailsPage() {
   useSetPageTitle(vendor?.ownerName);
   const { admin } = useAuthStore();
   const canViewBookings = admin?.role === 'SUPER_ADMIN' || admin?.role === 'SUB_ADMIN';
+  const canEdit = admin?.role === 'SUPER_ADMIN' || admin?.role === 'SUB_ADMIN';
+  const [editingProfile, setEditingProfile] = useState(false);
 
   if (isLoading)
     return (
@@ -825,7 +913,29 @@ export default function VendorDetailsPage() {
               {vendor.registrationType}
             </span>
           </div>
+
+          {canEdit && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setEditingProfile(true)}
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              Edit Profile
+            </Button>
+          )}
         </div>
+
+        {canEdit && (
+          <VendorProfileEditDialog
+            open={editingProfile}
+            onClose={() => setEditingProfile(false)}
+            vendorId={vendorId}
+            ownerName={vendor.ownerName}
+            email={vendor.email}
+          />
+        )}
 
         {/* ── Vendor info + Cancellations ── */}
         <div className="grid gap-6 md:grid-cols-2">
@@ -911,7 +1021,7 @@ export default function VendorDetailsPage() {
               </span>
             </div>
             {vendor.shops.map((shop, i) => (
-              <ShopCard key={shop.id} shop={shop} index={i} />
+              <ShopCard key={shop.id} shop={shop} index={i} vendorId={vendorId} canEdit={canEdit} />
             ))}
           </div>
         ) : (
