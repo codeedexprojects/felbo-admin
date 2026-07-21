@@ -11,12 +11,20 @@ import {
   getVendorRequestDetail,
   getVendorBookings,
   getPendingShopCount,
+  updateVendorProfile,
+  updateShop,
+  updateShopService,
+  updateBarber,
 } from './api';
 import {
   VendorListFilter,
   VendorListResponse,
   VerificationRequestsFilter,
   VerificationRequestsResponse,
+  UpdateVendorProfileInput,
+  UpdateShopInput,
+  UpdateServiceInput,
+  UpdateBarberInput,
 } from './types';
 import { ListBookingsFilter } from '../bookings/types';
 
@@ -164,6 +172,69 @@ export const useRejectVendor = () => {
       queryClient.invalidateQueries({ queryKey: ['vendor-requests'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard', 'super-admin'] });
       toast.error('Failed to reject vendor. Please try again.');
+    },
+  });
+};
+
+export const useUpdateVendorProfile = (vendorId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: UpdateVendorProfileInput) => updateVendorProfile(vendorId, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vendor-detail', vendorId] });
+      queryClient.invalidateQueries({ queryKey: ['vendors'] });
+    },
+    onError: () => {
+      toast.error('Failed to update vendor profile. Please try again.');
+    },
+  });
+};
+
+export const useUpdateShop = (vendorId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ shopId, input }: { shopId: string; input: UpdateShopInput }) =>
+      updateShop(vendorId, shopId, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vendor-detail', vendorId] });
+    },
+    onError: () => {
+      toast.error('Failed to update shop. Please try again.');
+    },
+  });
+};
+
+export const useUpdateShopService = (vendorId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      shopId,
+      serviceId,
+      input,
+    }: {
+      shopId: string;
+      serviceId: string;
+      input: UpdateServiceInput;
+    }) => updateShopService(vendorId, shopId, serviceId, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vendor-detail', vendorId] });
+    },
+    onError: () => {
+      toast.error('Failed to update service. Please try again.');
+    },
+  });
+};
+
+export const useUpdateBarber = (vendorId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ barberId, input }: { barberId: string; input: UpdateBarberInput }) =>
+      updateBarber(vendorId, barberId, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vendor-detail', vendorId] });
+    },
+    onError: () => {
+      toast.error('Failed to update barber. Please try again.');
     },
   });
 };
